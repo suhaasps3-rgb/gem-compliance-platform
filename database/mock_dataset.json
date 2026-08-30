@@ -9,7 +9,8 @@
       "claims": {
         "is_msme": true,
         "turnover_cr": 4.5,
-        "local_content_pct": 80
+        "local_content_pct": 80,
+        "pan": "ACME1234Q"
       },
       "mca21_mock": {
         "reported_turnover_cr": 4.5,
