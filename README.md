@@ -2,7 +2,7 @@
 
 An intelligent, deterministic compliance engine for government procurement, built for the Smart India Hackathon.
 
-## The "Extremely Wow Moment"
+## The "Wow Moment"
 This platform does not use AI to disqualify bidders. Instead, it uses a **NetworkX Evidence Provenance Graph** to deterministically cross-reference PDF claims against authoritative government APIs (MCA21, Udyam, GSTN). 
 
 When a contradiction is found (e.g., a bidder claims Micro MSME status, but MCA21 reports turnover exceeding the limit), the platform surfaces it in a split-screen UI and empowers the Procurement Officer to instantly generate a legally-formatted Show-Cause Notice citing the exact **GFR 2017** regulations. All officer actions are securely logged to a **SHA-256 Tamper-Evident Ledger** that aggressively masks PII to comply with the DPDP Act.
