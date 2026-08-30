@@ -43,6 +43,7 @@ function App() {
             <option value="bidder-acme-001">Acme Corp (Green)</option>
             <option value="bidder-gamma-003">Gamma Tech (Yellow)</option>
             <option value="bidder-delta-004">Delta Solutions (Red Contradiction)</option>
+            <option value="bidder-theta-007">Theta Logistics (Time-Travel)</option>
           </select>
           <div className="text-sm font-medium text-slate-300 bg-slate-800 px-3 py-1.5 rounded">
             Officer: Inspector Raj
