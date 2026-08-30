@@ -48,6 +48,7 @@ A standalone full-stack web application.
 ### 3.2 Bidder Document Extraction & Ingestion
 - **REQ-2.1:** The system must extract structured claims from bidder-submitted compliance documents (e.g., CA Certificates).
 - **REQ-2.2:** The system must utilize a three-tier extraction pipeline: PyMuPDF native extraction (primary), falling back to OCR if character count is insufficient (indicating a scanned image). *Note: The current prototype implements the intelligent routing tripwire; actual AWS Textract OCR integration is scoped for Phase 2.*
+- **REQ-2.3 (Regional Language Support):** To ensure equitable access for rural MSMEs, non-English scanned documents routed to the OCR fallback tier must be processed via the **Bhashini API** (National Language Translation Mission) for authoritative translation prior to claim extraction.
 
 ### 3.3 Evidence Provenance Graph (`graph_engine.py`)
 - **REQ-3.1 (Deterministic Anchoring):** The system must construct a Directed Graph (allowing bidirectional corroboration edges) heavily anchored on PAN as the primary deterministic key, explicitly cross-corroborating against the PAN embedded within the GSTIN. Fuzzy matching must be demoted and treated only as an investigative lead, never as authoritative evidence.
