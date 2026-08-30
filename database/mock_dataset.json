@@ -1,0 +1,112 @@
+{
+  "dataset_description": "Demo Dataset for GeM Compliance Verification - SIH Hackathon",
+  "bidders": [
+    {
+      "id": "bidder-acme-001",
+      "name": "Acme Corp",
+      "scenario": "Green (The Baseline)",
+      "expected_status": "VERIFIED_COMPLIANT",
+      "claims": {
+        "is_msme": true,
+        "turnover_cr": 4.5,
+        "local_content_pct": 80
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 4.5,
+        "active_directors": ["DIN99991111"]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro",
+        "turnover_cr": 4.5
+      },
+      "gst_mock": {
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "id": "bidder-beta-002",
+      "name": "BETA LLC",
+      "scenario": "Red (The Filter)",
+      "expected_status": "NON_COMPLIANT",
+      "notes": "Missing mandatory EMD exemption certificate.",
+      "claims": {},
+      "mca21_mock": {},
+      "udyam_mock": {},
+      "gst_mock": {}
+    },
+    {
+      "id": "bidder-gamma-003",
+      "name": "Gamma Technologies Pvt Ltd",
+      "scenario": "Yellow (The Anomaly)",
+      "expected_status": "NEEDS_REVIEW",
+      "notes": "Entity name mismatch (Gamma Tech vs Gamma Technologies Pvt Ltd)",
+      "claims": {
+        "pan": "BKKPA1234F"
+      },
+      "mca21_mock": {
+        "legal_name": "Gamma Technologies Pvt Ltd"
+      },
+      "udyam_mock": {
+        "legal_name": "Gamma Tech"
+      },
+      "gst_mock": {
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "id": "bidder-delta-004",
+      "name": "Delta Solutions",
+      "scenario": "Deep Investigation (The Contradiction)",
+      "expected_status": "NEEDS_REVIEW",
+      "notes": "MSME Claim is 8.5Cr (Micro), but MCA21 is 14.5Cr (Small/Medium). Breaches 10Cr limit.",
+      "claims": {
+        "pan": "DELTA5678Z",
+        "turnover_cr": 8.5,
+        "enterprise_type": "Micro"
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 14.5
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "turnover_cr": 9.0
+      },
+      "gst_mock": {
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "id": "bidder-epsilon-005",
+      "name": "Epsilon Industries",
+      "scenario": "Wow Case (The Cartel) - Bidder 1",
+      "expected_status": "INVESTIGATIVE_LEAD",
+      "claims": {
+        "pan": "EPSILON123"
+      },
+      "mca21_mock": {
+        "active_directors": ["DIN01234567"]
+      },
+      "pdf_metadata": {
+        "author": "SystemUser1",
+        "creation_date": "2026-08-25T14:32:00Z"
+      }
+    },
+    {
+      "id": "bidder-zeta-006",
+      "name": "Zeta Trade",
+      "scenario": "Wow Case (The Cartel) - Bidder 2",
+      "expected_status": "INVESTIGATIVE_LEAD",
+      "claims": {
+        "pan": "ZETATRD999"
+      },
+      "mca21_mock": {
+        "active_directors": ["DIN01234567"]
+      },
+      "pdf_metadata": {
+        "author": "SystemUser1",
+        "creation_date": "2026-08-25T14:32:00Z"
+      }
+    }
+  ]
+}
