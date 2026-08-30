@@ -58,7 +58,13 @@ export default function Dashboard({ bidderId }) {
               {Object.entries(data.hard_filters).map(([key, val]) => (
                 <div key={key} className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100 text-sm">
                   <span className="text-slate-600 capitalize">{key.replace('_', ' ')}</span>
-                  <span className={`font-semibold ${val === 'PASS' ? 'text-emerald-600' : 'text-red-600'}`}>{val}</span>
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider flex items-center gap-1 ${val === 'PASS' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                    {val === 'PASS' ? (
+                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg> VERIFIED</>
+                    ) : (
+                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg> FAILED</>
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
