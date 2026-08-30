@@ -13,7 +13,9 @@
       },
       "mca21_mock": {
         "reported_turnover_cr": 4.5,
-        "active_directors": ["DIN99991111"]
+        "active_directors": [
+          "DIN99991111"
+        ]
       },
       "udyam_mock": {
         "status": "ACTIVE",
@@ -85,7 +87,9 @@
         "pan": "EPSILON123"
       },
       "mca21_mock": {
-        "active_directors": ["DIN01234567"]
+        "active_directors": [
+          "DIN01234567"
+        ]
       },
       "pdf_metadata": {
         "author": "SystemUser1",
@@ -101,11 +105,33 @@
         "pan": "ZETATRD999"
       },
       "mca21_mock": {
-        "active_directors": ["DIN01234567"]
+        "active_directors": [
+          "DIN01234567"
+        ]
       },
       "pdf_metadata": {
         "author": "SystemUser1",
         "creation_date": "2026-08-25T14:32:00Z"
+      }
+    },
+    {
+      "id": "bidder-theta-007",
+      "name": "Theta Logistics",
+      "scenario": "Time Travel (The Expired Debarment)",
+      "expected_status": "NEEDS_REVIEW",
+      "notes": "Debarment expired in 2026, but was active during Tender Closing Date (2025).",
+      "claims": {
+        "pan": "THETA4444X"
+      },
+      "debarment_mock": {
+        "is_debarred_currently": false,
+        "historical_records": [
+          {
+            "start_date": "2024-01-15",
+            "end_date": "2026-01-15",
+            "reason": "Rule 151 Violation"
+          }
+        ]
       }
     }
   ]

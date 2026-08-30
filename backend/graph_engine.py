@@ -88,7 +88,30 @@ class EvidenceGraphEngine:
                 "ai_synthesis": "Identity Inconsistency Risk: The legal name registered in MCA21 differs from the Udyam registration, requiring manual review of entity linkage."
             }
             self.contradictions.append(conflict)
-            
+
+        # 3. Theta Case: Time-Travel Temporal Validation
+        debarment = self.bidder.get("debarment_mock", {})
+        if debarment:
+            tender_closing_date = "2025-12-01"
+            for record in debarment.get("historical_records", []):
+                start = record.get("start_date")
+                end = record.get("end_date")
+                if start <= tender_closing_date <= end:
+                    if status == "VERIFIED_COMPLIANT":
+                        status = "NEEDS_REVIEW"
+                    conflict = {
+                        "contradiction_id": f"conflict-temporal-{self.bidder['id']}",
+                        "claim": f"Current Status: CLEAN (as of Aug 2026)",
+                        "evidence": f"Debarment active from {start} to {end}",
+                        "ai_synthesis": f"Temporal Loophole Detected: Bidder is clean today, but was actively debarred on the Tender Closing Date ({tender_closing_date}). Bid is legally invalid."
+                    }
+                    self.contradictions.append(conflict)
+                    
+                    # Add Evidence node and connection dynamically
+                    self.graph.add_node("Evidence:Debarment", type="Evidence", source="Vigilance DB 🔴")
+                    pan = claims.get("pan", "UNKNOWN")
+                    self.graph.add_edge(f"Anchor:PAN:{pan}", "Evidence:Debarment", relation="TEMPORAL_VIOLATION", color="red")
+
         return {
             "status": status,
             "contradictions": self.contradictions
