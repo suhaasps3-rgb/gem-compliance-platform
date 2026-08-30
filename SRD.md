@@ -10,7 +10,7 @@
 This Software Requirements Document (SRD) specifies the architecture, functional, and non-functional requirements for the GeM (Government e Marketplace) Compliance Platform. The system acts as a deterministic verification engine that cross-references unstructured bidder claims against authoritative government APIs.
 
 ### 1.2 Scope
-The system will ingest Tender PDFs to compile rules and Bidder Certificates to extract claims, mapping them into a **NetworkX Evidence Provenance Graph**. It will highlight contradictions to Procurement Officers. It explicitly relies on deterministic math for rule evaluation and Identity Anchoring (PAN/CIN), utilizing LLMs only for initial text structuring.
+The system will ingest Tender PDFs to compile rules and Bidder Certificates to extract claims, mapping them into a **NetworkX Evidence Provenance Graph**. It will highlight contradictions to Procurement Officers. It explicitly relies on deterministic math for rule evaluation and Identity Anchoring (PAN/CIN). The current prototype utilizes targeted Regex/PyMuPDF for extraction to guarantee zero-latency and deterministic reliability, with LLM-based unstructured parsing scoped for Phase 2.
 
 ### 1.3 Definitions and Acronyms
 - **GeM:** Government e Marketplace.
