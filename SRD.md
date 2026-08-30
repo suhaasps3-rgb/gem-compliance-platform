@@ -47,7 +47,7 @@ A standalone full-stack web application.
 
 ### 3.2 Bidder Document Extraction & Ingestion
 - **REQ-2.1:** The system must extract structured claims from bidder-submitted compliance documents (e.g., CA Certificates).
-- **REQ-2.2:** The system must utilize a three-tier extraction pipeline: PyMuPDF native extraction (primary) falling back to OCR (AWS Textract) if character count is insufficient (indicating a scanned image).
+- **REQ-2.2:** The system must utilize a three-tier extraction pipeline: PyMuPDF native extraction (primary), falling back to OCR if character count is insufficient (indicating a scanned image). *Note: The current prototype implements the intelligent routing tripwire; actual AWS Textract OCR integration is scoped for Phase 2.*
 
 ### 3.3 Evidence Provenance Graph (`graph_engine.py`)
 - **REQ-3.1 (Deterministic Anchoring):** The system must construct a Directed Graph (allowing bidirectional corroboration edges) heavily anchored on PAN as the primary deterministic key, explicitly cross-corroborating against the PAN embedded within the GSTIN. Fuzzy matching must be demoted and treated only as an investigative lead, never as authoritative evidence.
@@ -80,7 +80,7 @@ A standalone full-stack web application.
 
 ### 5.1 Performance & Scalability
 - **Latency:** Graph traversal and contradiction detection must resolve in **sub-second latency (< 1000ms)** for demo-scale graphs, achievable by executing NetworkX traversals entirely in-memory prior to database commit.
-- **Cost-Optimization:** The system must default to native PyMuPDF extraction, routing to paid OCR APIs only if native extraction fails, saving significant operational expenditure at a national scale.
+- **Cost-Optimization:** The system must default to native PyMuPDF extraction, routing to paid OCR APIs only if native extraction fails, saving significant operational expenditure at a national scale. *(OCR API integration is scoped for Phase 2).*
 
 ### 5.2 Security & Compliance
 - System must never auto-disqualify a bidder based purely on heuristic AI analysis.
