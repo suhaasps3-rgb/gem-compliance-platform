@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useDashboardStore } from './store/dashboardStore';
 
 export default function ContradictionReview({ contradictions, bidderId }) {
   const [loading, setLoading] = useState(false);
   const [modalData, setModalData] = useState(null);
+  const [dismissed, setDismissed] = React.useState(new Set());
+  const addAuditEntry = useDashboardStore((s) => s.addAuditEntry);
 
   if (!contradictions || contradictions.length === 0) {
     return (
@@ -39,7 +42,17 @@ export default function ContradictionReview({ contradictions, bidderId }) {
 
   return (
     <div className="space-y-6">
-      {contradictions.map((conflict, idx) => (
+      {(() => {
+        const visible = (contradictions || []).filter(c => !dismissed.has(c.contradiction_id));
+        if (visible.length === 0 && contradictions?.length > 0) {
+          return (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 flex items-center justify-center text-emerald-700">
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+              <span className="font-semibold text-lg">All contradictions dismissed (manual override)</span>
+            </div>
+          );
+        }
+        return visible.map((conflict, idx) => (
         <div key={idx} className="bg-white border-2 border-red-200 rounded-lg shadow-sm overflow-hidden relative">
           <div className="bg-red-50 border-b border-red-100 px-6 py-4 flex items-center">
             <svg className="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -69,7 +82,17 @@ export default function ContradictionReview({ contradictions, bidderId }) {
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
-              <button className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded transition">
+              <button
+                onClick={() => {
+                  setDismissed(prev => new Set([...prev, conflict.contradiction_id]));
+                  addAuditEntry({
+                    action: 'DISMISSED',
+                    bidder_id: bidderId,
+                    contradiction_id: conflict.contradiction_id,
+                    timestamp: new Date().toISOString(),
+                  });
+                }}
+                className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded transition">
                 Dismiss (Manual Override)
               </button>
               <button 
@@ -82,7 +105,9 @@ export default function ContradictionReview({ contradictions, bidderId }) {
             </div>
           </div>
         </div>
-      ))}
+        ));
+      })()}
+
 
       {/* Modal Overlay */}
       {modalData && (

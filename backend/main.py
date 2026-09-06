@@ -6,10 +6,13 @@ from typing import List, Optional
 import uuid
 import json
 import os
+import re as _re
+import fitz as _fitz
 from graph_engine import EvidenceGraphEngine
 from collusion_engine import CollusionEngine
 from rule_compiler import TenderRuleCompiler
 from audit_engine import AuditEngine
+from bhashini_integration import BhashiniIntegrationLayer
 
 global_audit_ledger = AuditEngine()
 
@@ -346,6 +349,65 @@ async def get_tender_documents(tender_id: str):
         "udyam": f"{base_url}/udyam_{tender_id}.pdf",
     }
 
+
+@app.post("/api/v1/tenders/translate-regional")
+async def translate_regional_tender(
+    regional_pdf: UploadFile = File(...),
+    source_lang: str = Form(default="hi")
+):
+    """
+    Step 1: Try PyMuPDF text extraction (works for text-layer PDFs like Playwright-generated).
+    Step 2: If scanned image PDF (< 50 chars), route to Bhashini OCR + Translation.
+    Step 3: Extract compliance rules from resulting text.
+    """
+    file_bytes = await regional_pdf.read()
+
+    # ── Step 1: PyMuPDF text extraction ──
+    import pymupdf
+    doc = pymupdf.open(stream=file_bytes, filetype="pdf")
+    raw_text = ""
+    for page in doc:
+        raw_text += page.get_text()
+
+    is_scanned = len(raw_text.strip()) < 50
+
+    if is_scanned:
+        # Scanned image PDF → Bhashini OCR + Translation
+        bhashini = BhashiniIntegrationLayer(user_token=os.environ.get("BHASHINI_TOKEN"))
+        translated_text    = bhashini.ocr_and_translate(file_bytes, source_lang=source_lang)
+        is_simulated       = not os.environ.get("BHASHINI_TOKEN")
+        translation_source = "BHASHINI_SIMULATION" if is_simulated else "BHASHINI_API"
+        bhashini_note      = (
+            "Scanned image PDF — Bhashini OCR applied (simulation mode). Set BHASHINI_TOKEN for live API."
+            if is_simulated else
+            "Scanned image PDF translated via Bhashini ULCA (MeitY AI pipeline)."
+        )
+    else:
+        # Text-layer PDF — use extracted text directly
+        translated_text    = raw_text
+        translation_source = "PDF_TEXT_EXTRACTED"
+        bhashini_note      = (
+            f"Text layer detected ({len(raw_text.strip())} chars via PyMuPDF). "
+            f"Bhashini OCR not needed. In production, Bhashini would translate regional text to English."
+        )
+
+    # ── Step 3: Extract compliance rules ──
+    compiler = TenderRuleCompiler()
+    rules    = compiler.extract_rules_from_text(translated_text)
+
+    return {
+        "status":                  "SUCCESS",
+        "source_language":         source_lang,
+        "pdf_type":                "SCANNED_IMAGE" if is_scanned else "TEXT_LAYER",
+        "translation_source":      translation_source,
+        "bhashini_note":           bhashini_note,
+        "chars_extracted":         len(raw_text.strip()),
+        "translated_text_preview": translated_text[:400] + "..." if len(translated_text) > 400 else translated_text,
+        "extracted_rules":         rules,
+        "rule_count":              len(rules)
+    }
+
+
 @app.post("/api/v1/ingest/document", response_model=IngestDocumentResponse)
 async def ingest_document(
     bidder_id: str = Form(...),
@@ -468,6 +530,162 @@ async def officer_decision(request: OfficerDecisionRequest):
         generated_notice_url=f"s3://bucket/notices/{uuid.uuid4()}.pdf",
         generated_notice_text=notice_text
     )
+
+
+# ──────────────────────────────────────────────────────
+# NEW ENDPOINTS — Document Parsers (EPFO, ESIC, Startup, NSIC, WO, Turnover)
+# ──────────────────────────────────────────────────────
+from document_parsers import parse_epfo, parse_esic, parse_startup, parse_nsic, parse_work_order, parse_turnover_ca
+from experience_engine import validate_experience
+from technical_eval import evaluate_technical_specs, extract_specs_from_pdf
+from batch_engine import batch_registry, create_batch, get_batch_state
+import zipfile
+import io
+
+@app.post("/api/v1/bidders/parse-epfo")
+async def parse_epfo_doc(epfo_pdf: UploadFile = File(...)):
+    file_bytes = await epfo_pdf.read()
+    return parse_epfo(file_bytes)
+
+@app.post("/api/v1/bidders/parse-esic")
+async def parse_esic_doc(esic_pdf: UploadFile = File(...)):
+    file_bytes = await esic_pdf.read()
+    return parse_esic(file_bytes)
+
+@app.post("/api/v1/bidders/parse-startup")
+async def parse_startup_doc(startup_pdf: UploadFile = File(...)):
+    file_bytes = await startup_pdf.read()
+    return parse_startup(file_bytes)
+
+@app.post("/api/v1/bidders/parse-nsic")
+async def parse_nsic_doc(nsic_pdf: UploadFile = File(...)):
+    file_bytes = await nsic_pdf.read()
+    return parse_nsic(file_bytes)
+
+@app.post("/api/v1/bidders/parse-work-order")
+async def parse_work_order_doc(wo_pdf: UploadFile = File(...)):
+    file_bytes = await wo_pdf.read()
+    return parse_work_order(file_bytes)
+
+@app.post("/api/v1/bidders/parse-turnover")
+async def parse_turnover_doc(turnover_pdf: UploadFile = File(...)):
+    file_bytes = await turnover_pdf.read()
+    return parse_turnover_ca(file_bytes)
+
+@app.post("/api/v1/bidders/validate-experience")
+async def validate_bidder_experience(
+    requirement_cr: float = Form(...),
+    eligible_years: int = Form(default=5),
+    wo_results: str = Form(...)  # JSON string of work order result list
+):
+    import json
+    try:
+        work_orders = json.loads(wo_results)
+    except Exception:
+        raise HTTPException(status_code=400, detail="wo_results must be a JSON array of work order parse results")
+    return validate_experience(work_orders, requirement_cr, eligible_years)
+
+@app.post("/api/v1/technical/evaluate")
+async def technical_evaluate(
+    tender_specs: str = Form(...),   # JSON list of {parameter, operator, required_value, unit}
+    vendor_pdf: Optional[UploadFile] = File(None),
+    vendor_specs: Optional[str] = Form(None)  # JSON list of {parameter, vendor_value}
+):
+    import json
+    try:
+        t_specs = json.loads(tender_specs)
+    except Exception:
+        raise HTTPException(status_code=400, detail="tender_specs must be valid JSON")
+
+    if vendor_pdf:
+        file_bytes = await vendor_pdf.read()
+        v_specs = extract_specs_from_pdf(file_bytes)
+        if not v_specs and vendor_specs:
+            v_specs = json.loads(vendor_specs)
+    elif vendor_specs:
+        v_specs = json.loads(vendor_specs)
+    else:
+        raise HTTPException(status_code=400, detail="Provide either vendor_pdf or vendor_specs")
+
+    return evaluate_technical_specs(t_specs, v_specs)
+
+@app.get("/api/v1/cartel/metadata-fingerprint")
+async def cartel_metadata_fingerprint():
+    """Analyze PDF metadata clusters from mock dataset."""
+    mock_data = load_mock_data()
+    bidders = mock_data.get("bidders", [])
+    engine = CollusionEngine(bidders)
+    clusters = engine.get_metadata_clusters(bidders)
+    return {
+        "status": "ANALYSIS_COMPLETE",
+        "clusters": clusters,
+        "total_suspicious_clusters": len(clusters),
+        "disclaimer": "Metadata similarity is a suspicious indicator only. Not definitive proof of collusion."
+    }
+
+@app.get("/api/v1/cartel/network-risk")
+async def cartel_network_risk():
+    """Analyze IP/network overlap from mock submission metadata."""
+    mock_data = load_mock_data()
+    bidders = mock_data.get("bidders", [])
+    engine = CollusionEngine(bidders)
+    clusters = engine.get_ip_clusters(bidders)
+    return {
+        "status": "ANALYSIS_COMPLETE",
+        "ip_clusters": clusters,
+        "total_clusters": len(clusters),
+        "disclaimer": "SIMULATED DEMONSTRATION DATA. IP overlap does not constitute proof of collusion."
+    }
+
+# ──────────────────────────────────────────────────────
+# BATCH PROCESSING
+# ──────────────────────────────────────────────────────
+from fastapi import BackgroundTasks
+from batch_engine import process_batch_background
+
+@app.post("/api/v1/batch/upload")
+async def batch_upload(
+    background_tasks: BackgroundTasks,
+    batch_zip: UploadFile = File(...)
+):
+    """Accept a ZIP of bidder folders. Identify bidders. Start background processing."""
+    zip_bytes = await batch_zip.read()
+    try:
+        batch_id = create_batch(zip_bytes)
+        background_tasks.add_task(process_batch_background, batch_id, zip_bytes)
+        state = get_batch_state(batch_id)
+        return {
+            "batch_id": batch_id,
+            "status": "QUEUED",
+            "bidders_identified": list(state["bidders"].keys()),
+            "bidder_count": len(state["bidders"])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to process ZIP: {str(e)}")
+
+@app.get("/api/v1/batch/{batch_id}")
+async def get_batch(batch_id: str):
+    state = get_batch_state(batch_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    return state
+
+@app.get("/api/v1/batch/{batch_id}/status")
+async def get_batch_status(batch_id: str):
+    state = get_batch_state(batch_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    bidders = state.get("bidders", {})
+    processed = sum(1 for b in bidders.values() if b["status"] in ["COMPLETED", "PARTIAL", "FAILED"])
+    total = len(bidders)
+    return {
+        "batch_id": batch_id,
+        "status": state["status"],
+        "total": total,
+        "processed": processed,
+        "progress_pct": round(processed / total * 100, 1) if total > 0 else 0,
+        "summary": state.get("summary", {})
+    }
 
 if __name__ == "__main__":
     import uvicorn

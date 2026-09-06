@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import EvidenceGraph from './EvidenceGraph';
 import ContradictionReview from './ContradictionReview';
+
 import GovDocPanel from './GovDocPanel';
+import ComplianceScorecard from './components/ComplianceScorecard';
+import ExperiencePanel from './components/ExperiencePanel';
+import TechnicalMatrix from './components/TechnicalMatrix';
+
 import { useDashboardStore } from './store/dashboardStore';
 
 export default function Dashboard({ bidderId }) {
@@ -141,7 +146,11 @@ export default function Dashboard({ bidderId }) {
         </div>
       </div>
 
-      <GovDocPanel />
+      
+        <GovDocPanel />
+        <ExperiencePanel />
+        <TechnicalMatrix />
+
 
       <EvidenceGraph graphData={displayData.graph_data} />
       

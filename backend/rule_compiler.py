@@ -113,3 +113,52 @@ class TenderRuleCompiler:
             })
 
         return extracted_rules
+
+    def extract_rules_from_text(self, text: str) -> list:
+        """
+        Same extraction logic as extract_rules_from_pdf but accepts
+        pre-translated plain text (e.g. from Bhashini OCR output).
+        """
+        import re, uuid as _uuid
+        import config
+
+        extracted_rules = []
+        text_lower = text.lower()
+
+        turnover_match = re.search(r'turnover.*?<=?\s*(?:rs\.?|inr|₹)?\s*(\d+)\s*cr', text_lower, re.DOTALL)
+        if turnover_match or 'micro' in text_lower:
+            cr_limit = turnover_match.group(1) if turnover_match else "2000"
+            config.active_tender_limits["msme"] = int(cr_limit)
+            extracted_rules.append({
+                "clause": "MSME Financial Capacity (Bhashini Extracted)",
+                "description": f"Turnover limit Rs. {cr_limit} Cr extracted from regional-language tender via Bhashini translation.",
+                "mapped_regulatory_id": str(_uuid.uuid4())
+            })
+
+        if 'sub-contracting' in text_lower or 'subcontract' in text_lower:
+            sub_match = re.search(r'sub-contracting.*?(\d+)\s*%', text_lower, re.DOTALL)
+            pct = sub_match.group(1) if sub_match else "20"
+            config.active_tender_limits["subcontract"] = int(pct)
+            extracted_rules.append({
+                "clause": "Sub-contracting Limit (Bhashini Extracted)",
+                "description": f"Sub-contracting capped at {pct}% per regional tender document.",
+                "mapped_regulatory_id": str(_uuid.uuid4())
+            })
+
+        if 'make in india' in text_lower or 'local content' in text_lower:
+            mii_match = re.search(r'local content.*?(\d+)\s*%', text_lower, re.DOTALL)
+            pct = mii_match.group(1) if mii_match else "50"
+            config.active_tender_limits["mii"] = int(pct)
+            extracted_rules.append({
+                "clause": "Make in India Local Content (Bhashini Extracted)",
+                "description": f"Minimum local content {pct}% extracted from translated regional tender.",
+                "mapped_regulatory_id": str(_uuid.uuid4())
+            })
+
+        extracted_rules.append({
+            "clause": "GFR 2017 Rule 175 (Bhashini — Code of Integrity)",
+            "description": "Baseline statutory rule applied after Bhashini translation pipeline.",
+            "mapped_regulatory_id": str(_uuid.uuid4())
+        })
+
+        return extracted_rules

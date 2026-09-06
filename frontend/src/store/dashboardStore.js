@@ -1,35 +1,55 @@
-// src/store/dashboardStore.js
 import { create } from 'zustand';
 
-// Zustand store for global dashboard state
-export const useDashboardStore = create((set, get) => ({
-  // Currently selected document tab: 'tender' | 'gst' | 'udyam'
+export const useDashboardStore = create((set) => ({
+  // Active document in Viewer
   selectedDocument: 'tender',
-  setSelectedDocument: (doc) => set({ selectedDocument: doc }),
+  setSelectedDocument: (docId) => set({ selectedDocument: docId }),
 
-  // Reference to the PDF viewer (exposes goToPage)
+  // Viewer state
   viewerRef: null,
   setViewerRef: (ref) => set({ viewerRef: ref }),
 
-  // Client-only audit log (SHA-256 entries)
+  // Ledger state
   auditLog: [],
-  addAuditEntry: (entry) => set({ auditLog: [...get().auditLog, entry] }),
+  addAuditEntry: (entry) => set((state) => ({ 
+    auditLog: [...state.auditLog, { ...entry, timestamp: new Date().toISOString() }] 
+  })),
 
-  // Dynamic tender rules compiled from officer uploads
-  tenderRules: [],
+  // Evaluated tender rules
+  tenderRules: null,
   setTenderRules: (rules) => set({ tenderRules: rules }),
 
-  // Result from verifying an uploaded bidder document (bypasses dropdown)
+  // Core parsing results
   verifiedDocResult: null,
-  setVerifiedDocResult: (result) => set({ verifiedDocResult: result }),
-  clearVerifiedDocResult: () => set({ verifiedDocResult: null }),
+  setVerifiedDocResult: (res) => set({ verifiedDocResult: res }),
 
-  // Results from parsing GST / Udyam certificates
   gstParseResult: null,
-  setGstParseResult: (result) => set({ gstParseResult: result }),
-  clearGstParseResult: () => set({ gstParseResult: null }),
+  setGstParseResult: (res) => set({ gstParseResult: res }),
 
   udyamParseResult: null,
-  setUdyamParseResult: (result) => set({ udyamParseResult: result }),
-  clearUdyamParseResult: () => set({ udyamParseResult: null }),
+  setUdyamParseResult: (res) => set({ udyamParseResult: res }),
+
+  // NEW: Additional document parsers
+  epfoParseResult: null,
+  setEpfoParseResult: (res) => set({ epfoParseResult: res }),
+
+  esicParseResult: null,
+  setEsicParseResult: (res) => set({ esicParseResult: res }),
+
+  startupParseResult: null,
+  setStartupParseResult: (res) => set({ startupParseResult: res }),
+
+  nsicParseResult: null,
+  setNsicParseResult: (res) => set({ nsicParseResult: res }),
+
+  // NEW: Technical matrix and experience
+  technicalMatrixResult: null,
+  setTechnicalMatrixResult: (res) => set({ technicalMatrixResult: res }),
+
+  experienceResult: null,
+  setExperienceResult: (res) => set({ experienceResult: res }),
+  
+  // NEW: Batch processor mode
+  batchModeActive: false,
+  setBatchModeActive: (active) => set({ batchModeActive: active })
 }));

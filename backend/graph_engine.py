@@ -116,19 +116,21 @@ class EvidenceGraphEngine:
 
         # 3. Theta Case: Time-Travel Temporal Validation
         debarment = self.bidder.get("debarment_mock", {})
-        if debarment and debarment.get("start") and debarment.get("end"):
-            tender_closing_date = "2025-12-01"
-            # Simple string comparison works for YYYY-MM-DD
-            if debarment.get("start") <= tender_closing_date <= debarment.get("end"):
+        tender_closing_date = "2025-12-01"
+        historical = debarment.get("historical_records", [])
+        for rec in historical:
+            rec_start = rec.get("start_date", "")
+            rec_end = rec.get("end_date", "")
+            if rec_start and rec_end and rec_start <= tender_closing_date <= rec_end:
                 status = "NEEDS_REVIEW"
                 conflict = {
                     "contradiction_id": f"conflict-debarment-{self.bidder['id']}",
                     "claim": "Current Status: CLEAN (as of Aug 2026)",
-                    "evidence": f"Debarment active from {debarment.get('start')} to {debarment.get('end')}",
+                    "evidence": f"Debarment active from {rec_start} to {rec_end}",
                     "ai_synthesis": f"Temporal Policy Violation: While the bidder is currently not debarred, they were actively blacklisted during the Tender Closing Date ({tender_closing_date})."
                 }
                 self.contradictions.append(conflict)
-                    
+
                 # Add Evidence node and connection dynamically
                 self.graph.add_node("Evidence:Debarment", type="Evidence", source="Vigilance DB 🔴")
                 pan = claims.get("pan", "UNKNOWN")
@@ -172,6 +174,26 @@ class EvidenceGraphEngine:
                 "evidence": f"GSTN API 🔴: Missed {gstn.get('months_missed')} months of GSTR-3B",
                 "ai_synthesis": "Fiscal Non-Compliance: GSTN triangulation confirms the bidder has halted tax filings for 6 months, violating Rule 7 of the standard bidding document."
             })
+
+        # Update hard filters based on actual bidder data
+        vigilance = self.bidder.get("vigilance_mock", {})
+        debarment_check = self.bidder.get("debarment_mock", {})
+        if debarment_check.get("is_debarred_currently", False):
+            self.hard_filters["not_debarred"] = "FAIL"
+            status = "NEEDS_REVIEW"
+        gstn_check = self.bidder.get("gstn_mock", {})
+        if gstn_check and not gstn_check.get("status", "ACTIVE") == "ACTIVE":
+            self.hard_filters["gst_active"] = "FAIL"
+
+        # Update hard filters based on actual bidder data
+        vigilance = self.bidder.get("vigilance_mock", {})
+        debarment_check = self.bidder.get("debarment_mock", {})
+        if debarment_check.get("is_debarred_currently", False):
+            self.hard_filters["not_debarred"] = "FAIL"
+            status = "NEEDS_REVIEW"
+        gstn_check = self.bidder.get("gstn_mock", {})
+        if gstn_check and not gstn_check.get("status", "ACTIVE") == "ACTIVE":
+            self.hard_filters["gst_active"] = "FAIL"
 
         return {
             "status": status,

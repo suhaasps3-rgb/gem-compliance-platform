@@ -4,80 +4,100 @@ import { useDashboardStore } from '../../store/dashboardStore';
 
 const DOC_URLS = {
   tender: '/tender_demo.pdf',
-  gst: '/gst_tender_demo.pdf',
-  udyam: '/udyam_tender_demo.pdf',
+  gst:    '/gst_tender_demo.pdf',
+  udyam:  '/udyam_tender_demo.pdf',
+  epfo: '/epfo_demo.pdf',
+  esic: '/esic_demo.pdf',
+  startup: '/startup_india_demo.pdf',
+  nsic: '/nsic_demo.pdf',
+  work_order: '/work_order_1.pdf',
+  turnover: '/ca_turnover.pdf',
+  technical: '/technical_catalog.pdf'
 };
 
-// Which backend endpoint + form field name to use per tab
 const UPLOAD_CONFIG = {
-  tender: { endpoint: '/api/v1/bidders/verify-document',  field: 'bidder_pdf' },
-  gst:    { endpoint: '/api/v1/bidders/parse-gst',         field: 'gst_pdf'    },
-  udyam:  { endpoint: '/api/v1/bidders/parse-udyam',       field: 'udyam_pdf'  },
+  tender: { endpoint: '/api/v1/bidders/verify-document', field: 'bidder_pdf' },
+  gst:    { endpoint: '/api/v1/bidders/parse-gst',        field: 'gst_pdf'   },
+  udyam:  { endpoint: '/api/v1/bidders/parse-udyam',      field: 'udyam_pdf' },
+  epfo: { endpoint: '/api/v1/bidders/parse-epfo', field: 'epfo_pdf' },
+  esic: { endpoint: '/api/v1/bidders/parse-esic', field: 'esic_pdf' },
+  startup: { endpoint: '/api/v1/bidders/parse-startup', field: 'startup_pdf' },
+  nsic: { endpoint: '/api/v1/bidders/parse-nsic', field: 'nsic_pdf' },
+  work_order: { endpoint: '/api/v1/bidders/parse-work-order', field: 'wo_pdf' },
+  turnover: { endpoint: '/api/v1/bidders/parse-turnover', field: 'turnover_pdf' }
 };
+
+const LANG_OPTIONS = [
+  { code: 'te', label: 'Telugu' },
+  { code: 'ml', label: 'Malayalam' },
+  { code: 'hi', label: 'Hindi' },
+  { code: 'ta', label: 'Tamil' },
+  { code: 'kn', label: 'Kannada' },
+  { code: 'bn', label: 'Bengali' },
+];
 
 export default function Viewer() {
-  const selectedDocument   = useDashboardStore((s) => s.selectedDocument);
-  const setViewerRef       = useDashboardStore((s) => s.setViewerRef);
-  const setVerifiedDocResult = useDashboardStore((s) => s.setVerifiedDocResult);
-  const setGstParseResult  = useDashboardStore((s) => s.setGstParseResult);
+  const selectedDocument    = useDashboardStore((s) => s.selectedDocument);
+  const setViewerRef        = useDashboardStore((s) => s.setViewerRef);
+  const setVerifiedDocResult  = useDashboardStore((s) => s.setVerifiedDocResult);
+  const setGstParseResult   = useDashboardStore((s) => s.setGstParseResult);
   const setUdyamParseResult = useDashboardStore((s) => s.setUdyamParseResult);
+  const setEpfoParseResult = useDashboardStore((s) => s.setEpfoParseResult);
+  const setEsicParseResult = useDashboardStore((s) => s.setEsicParseResult);
+  const setStartupParseResult = useDashboardStore((s) => s.setStartupParseResult);
+  const setNsicParseResult = useDashboardStore((s) => s.setNsicParseResult);
 
   const iframeRef = useRef(null);
-  const [loadError, setLoadError]     = React.useState(false);
-  const [customPdfUrl, setCustomPdfUrl] = React.useState(null);
-  const [verifying, setVerifying]     = React.useState(false);
-  const [verifyStatus, setVerifyStatus] = React.useState(null); // 'ok' | 'error'
+  const [loadError, setLoadError]         = React.useState(false);
+  const [customPdfUrl, setCustomPdfUrl]   = React.useState(null);
+  const [verifying, setVerifying]         = React.useState(false);
+  const [verifyStatus, setVerifyStatus]   = React.useState(null);
+
+  // Bhashini state — only used on tender tab
+  const [showBhashini, setShowBhashini]   = React.useState(false);
+  const [bhLang, setBhLang]               = React.useState('te');
+  const [bhLoading, setBhLoading]         = React.useState(false);
+  const [bhResult, setBhResult]           = React.useState(null);
 
   const pdfUrl = customPdfUrl || DOC_URLS[selectedDocument] || DOC_URLS.tender;
 
   useEffect(() => {
-    setViewerRef({
-      goToPage: (page) => {
-        if (iframeRef.current) {
-          try { iframeRef.current.contentWindow?.postMessage({ type: 'goToPage', page }, '*'); } catch (_) {}
-        }
-      },
-    });
+    setViewerRef({ goToPage: (page) => {
+      try { iframeRef.current?.contentWindow?.postMessage({ type: 'goToPage', page }, '*'); } catch (_) {}
+    }});
   }, [setViewerRef]);
 
   useEffect(() => {
     setLoadError(false);
     setCustomPdfUrl(null);
     setVerifyStatus(null);
+    setShowBhashini(false);
+    setBhResult(null);
   }, [selectedDocument]);
 
+  // ── Upload bidder / GST / Udyam PDF ──
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
-    // Reset input so same file can be re-uploaded
     e.target.value = '';
-    if (!file || file.type !== 'application/pdf') {
-      alert('Please upload a valid PDF file.');
-      return;
-    }
+    if (!file || file.type !== 'application/pdf') { alert('Please upload a valid PDF file.'); return; }
 
     setCustomPdfUrl(URL.createObjectURL(file));
-    setLoadError(false);
-    setVerifyStatus(null);
-    setVerifying(true);
-
+    setLoadError(false); setVerifyStatus(null); setVerifying(true);
     const cfg = UPLOAD_CONFIG[selectedDocument] || UPLOAD_CONFIG.tender;
 
     try {
       const formData = new FormData();
       formData.append(cfg.field, file);
-
-      const res = await fetch(`http://localhost:8000${cfg.endpoint}`, {
-        method: 'POST',
-        body: formData,
-      });
+      const res = await fetch(`http://localhost:8000${cfg.endpoint}`, { method: 'POST', body: formData });
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const data = await res.json();
-
-      // Route result to the correct store slice
-      if (selectedDocument === 'gst')   setGstParseResult(data);
+      if (selectedDocument === 'gst')        setGstParseResult(data);
       else if (selectedDocument === 'udyam') setUdyamParseResult(data);
-      else setVerifiedDocResult(data);
-
+      else if (selectedDocument === 'epfo') setEpfoParseResult(data);
+      else if (selectedDocument === 'esic') setEsicParseResult(data);
+      else if (selectedDocument === 'startup') setStartupParseResult(data);
+      else if (selectedDocument === 'nsic') setNsicParseResult(data);
+      else                                   setVerifiedDocResult(data);
       setVerifyStatus('ok');
     } catch (err) {
       console.error('Upload failed:', err);
@@ -87,38 +107,48 @@ export default function Viewer() {
     }
   };
 
+  // ── Bhashini translate regional tender ──
+  const handleBhashiniUpload = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file || file.type !== 'application/pdf') { alert('Please upload a valid PDF file.'); return; }
+
+    setCustomPdfUrl(URL.createObjectURL(file));
+    setBhLoading(true); setBhResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('regional_pdf', file);
+      formData.append('source_lang', bhLang);
+      const res = await fetch('http://localhost:8000/api/v1/tenders/translate-regional', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Bhashini failed');
+      const data = await res.json();
+      setBhResult(data);
+    } catch (err) {
+      console.error('Bhashini failed:', err);
+    } finally {
+      setBhLoading(false);
+    }
+  };
+
   if (loadError) {
     return (
       <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded border border-gray-200 text-gray-600">
-        <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
         <p className="text-sm font-medium mb-3">Could not load PDF</p>
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="text-blue-600 underline text-sm hover:text-blue-800"
-        >
-          ⬇ Download PDF instead
-        </a>
-        <button
-          onClick={() => setLoadError(false)}
-          className="mt-2 text-xs text-gray-500 underline"
-        >
-          Retry
-        </button>
+        <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline text-sm">⬇ Download PDF instead</a>
+        <button onClick={() => setLoadError(false)} className="mt-2 text-xs text-gray-500 underline">Retry</button>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-t px-3 py-2 text-xs text-slate-700">
+      {/* ── Toolbar ── */}
+      <div className="flex items-center flex-wrap gap-2 bg-slate-100 border border-slate-200 rounded-t px-3 py-2 text-xs text-slate-700">
         <span className="font-semibold text-slate-800">PDF Preview</span>
 
-        {/* Upload Button — label changes per tab */}
-        <label className={`ml-4 cursor-pointer border px-3 py-1 rounded shadow-sm transition flex items-center text-xs font-medium
+        {/* Upload button */}
+        <label className={`cursor-pointer border px-3 py-1 rounded shadow-sm transition flex items-center text-xs font-medium
           ${verifying ? 'bg-blue-50 border-blue-300 text-blue-600 animate-pulse' :
             selectedDocument === 'gst'   ? 'bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100' :
             selectedDocument === 'udyam' ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100' :
@@ -133,6 +163,18 @@ export default function Viewer() {
           <input type="file" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
         </label>
 
+        {/* Bhashini button — ONLY on tender tab */}
+        {selectedDocument === 'tender' && (
+          <button
+            onClick={() => { setShowBhashini(v => !v); setBhResult(null); }}
+            className={`border px-3 py-1 rounded shadow-sm transition flex items-center text-xs font-medium
+              ${showBhashini
+                ? 'bg-orange-100 border-orange-400 text-orange-800'
+                : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300 text-orange-700 hover:bg-orange-100'}`}>
+            🇮🇳 Bhashini Translate
+          </button>
+        )}
+
         {/* Status badges */}
         {verifyStatus === 'ok' && (
           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
@@ -142,9 +184,14 @@ export default function Viewer() {
         {verifyStatus === 'error' && (
           <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">✗ Failed</span>
         )}
+        {bhResult && (
+          <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+            🇮🇳 Translated ({bhResult.source_language.toUpperCase()})
+          </span>
+        )}
 
         {customPdfUrl && (
-          <button onClick={() => { setCustomPdfUrl(null); setVerifyStatus(null); }}
+          <button onClick={() => { setCustomPdfUrl(null); setVerifyStatus(null); setBhResult(null); setShowBhashini(false); }}
             className="text-red-500 hover:text-red-700 underline ml-1 text-xs">
             Clear Upload
           </button>
@@ -158,16 +205,54 @@ export default function Viewer() {
         </span>
       </div>
 
+      {/* ── Bhashini panel — expands below toolbar on tender tab ── */}
+      {selectedDocument === 'tender' && showBhashini && (
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-t-0 border-orange-200 px-4 py-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-orange-800">🇮🇳 Bhashini OCR + Translation</span>
+            <span className="text-[9px] bg-orange-100 border border-orange-300 text-orange-700 px-2 py-0.5 rounded-full font-bold">MeitY AI</span>
+            <span className="text-[10px] text-orange-600 ml-1">Upload a regional language tender document — it will be translated to English automatically</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-orange-800">Language:</label>
+            <select value={bhLang} onChange={e => setBhLang(e.target.value)}
+              className="text-xs border border-orange-300 rounded px-2 py-1 bg-white text-slate-700">
+              {LANG_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+            </select>
+            <label className={`cursor-pointer border px-3 py-1 rounded shadow-sm transition flex items-center text-xs font-medium
+              ${bhLoading ? 'bg-orange-100 border-orange-300 text-orange-500 animate-pulse' : 'bg-orange-600 text-white hover:bg-orange-700'}`}>
+              {bhLoading ? 'Translating...' : 'Upload & Translate'}
+              <input type="file" accept="application/pdf" className="hidden" onChange={handleBhashiniUpload} />
+            </label>
+          </div>
+
+          {/* Bhashini result */}
+          {bhResult && (
+            <div className="bg-white rounded border border-orange-200 p-2 text-xs space-y-1">
+              <div className="flex items-center gap-2">
+                <span className={`font-bold px-2 py-0.5 rounded-full text-[9px] ${bhResult.translation_source === 'BHASHINI_API' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {bhResult.translation_source === 'BHASHINI_API' ? '✓ BHASHINI API' : '⚠ SIMULATION MODE'}
+                </span>
+                <span className="text-slate-500 text-[10px]">{bhResult.bhashini_note}</span>
+              </div>
+              <div className="text-slate-700 italic border-t border-slate-100 pt-1">
+                <span className="font-semibold not-italic">Translated text: </span>{bhResult.translated_text_preview}
+              </div>
+              <div className="text-emerald-700 font-semibold">✓ {bhResult.rule_count} compliance rules extracted from translated document</div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* PDF iframe */}
       <iframe
         ref={iframeRef}
         src={pdfUrl}
         title="PDF Viewer"
         className="w-full flex-1 rounded-b border border-t-0 border-slate-200"
-        style={{ minHeight: '75vh' }}
+        style={{ minHeight: '72vh' }}
         onError={() => setLoadError(true)}
       />
     </div>
-
   );
 }

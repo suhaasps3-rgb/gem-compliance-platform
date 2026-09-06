@@ -25,6 +25,54 @@
       },
       "gst_mock": {
         "status": "ACTIVE"
+      },
+      "submission_metadata": {
+        "ip_address": "10.0.1.5",
+        "user_agent": "Chrome/126"
+      },
+      "epfo_mock": {
+        "status": "ACTIVE",
+        "employee_count": 22,
+        "contribution_period": "August 2026",
+        "contribution_status": "PAID"
+      },
+      "esic_mock": {
+        "status": "ACTIVE",
+        "contribution_status": "PAID"
+      },
+      "startup_mock": null,
+      "nsic_mock": null,
+      "work_orders": [
+        {
+          "wo_number": "WO-1023",
+          "client": "Reliance Industries",
+          "value_cr": 2.1,
+          "order_date": "01/04/2023",
+          "fy": "2023-24",
+          "confidence": 0.94
+        },
+        {
+          "wo_number": "WO-1187",
+          "client": "ONGC",
+          "value_cr": 1.75,
+          "order_date": "15/09/2022",
+          "fy": "2022-23",
+          "confidence": 0.88
+        },
+        {
+          "wo_number": "WO-1452",
+          "client": "HPCL",
+          "value_cr": 3.5,
+          "order_date": "10/12/2024",
+          "fy": "2024-25",
+          "confidence": 0.91
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 520,
+        "Pressure": 22,
+        "Efficiency": 91,
+        "Voltage": 415
       }
     },
     {
@@ -36,7 +84,10 @@
       "claims": {},
       "mca21_mock": {},
       "udyam_mock": {},
-      "gst_mock": {}
+      "gst_mock": {},
+      "submission_metadata": {
+        "ip_address": "192.168.1.225"
+      }
     },
     {
       "id": "bidder-gamma-003",
@@ -55,6 +106,9 @@
       },
       "gst_mock": {
         "status": "ACTIVE"
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.64"
       }
     },
     {
@@ -77,6 +131,9 @@
       },
       "gst_mock": {
         "status": "ACTIVE"
+      },
+      "submission_metadata": {
+        "ip_address": "10.0.1.5"
       }
     },
     {
@@ -95,6 +152,9 @@
       "pdf_metadata": {
         "author": "SystemUser1",
         "creation_date": "2026-08-25T14:32:00Z"
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.34"
       }
     },
     {
@@ -113,6 +173,9 @@
       "pdf_metadata": {
         "author": "SystemUser1",
         "creation_date": "2026-08-25T14:32:00Z"
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.12"
       }
     },
     {
@@ -133,6 +196,9 @@
             "reason": "Rule 151 Violation"
           }
         ]
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.177"
       }
     },
     {
@@ -160,6 +226,9 @@
       },
       "vigilance_mock": {
         "debarred_history": []
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.151"
       }
     },
     {
@@ -188,6 +257,168 @@
       },
       "vigilance_mock": {
         "debarred_history": []
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.5.22"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-0987",
+          "client": "Indian Oil",
+          "value_cr": 1.2,
+          "order_date": "01/06/2021",
+          "fy": "2021-22",
+          "confidence": 0.82
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 450,
+        "Pressure": 18,
+        "Efficiency": 87,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-indigo-010",
+      "name": "Indigo Innovations Pvt Ltd",
+      "scenario": "Startup India + NSIC Exemptions",
+      "expected_status": "VERIFIED_COMPLIANT",
+      "claims": {
+        "turnover_cr": 3.2,
+        "local_content_pct": 65,
+        "subcontracting_pct": 10,
+        "pan": "INDGO9012P",
+        "is_msme": true
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 3.2,
+        "active_directors": [
+          "DIN55556666"
+        ]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro"
+      },
+      "gst_mock": {
+        "status": "ACTIVE"
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": true,
+        "months_missed": 0
+      },
+      "startup_mock": {
+        "recognition_number": "DIPP12345",
+        "certificate_status": "ACTIVE",
+        "entity_name": "Indigo Innovations Pvt Ltd",
+        "emd_exemption_supported": true
+      },
+      "nsic_mock": {
+        "certificate_number": "NS/MC/CH/2023/01234",
+        "nsic_valid": true,
+        "emd_exemption_supported": true
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-2201",
+          "client": "BPCL",
+          "value_cr": 6.8,
+          "order_date": "20/07/2023",
+          "fy": "2023-24",
+          "confidence": 0.92
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 510,
+        "Pressure": 21,
+        "Efficiency": 92,
+        "Voltage": 415
+      },
+      "submission_metadata": {
+        "ip_address": "172.16.0.10"
+      }
+    },
+    {
+      "id": "bidder-juliet-011",
+      "name": "Juliet Engineering Works",
+      "scenario": "Turnover UDIN Validation",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "turnover_cr": 8.5,
+        "local_content_pct": 60,
+        "subcontracting_pct": 12,
+        "pan": "JULET4567K",
+        "is_msme": true
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 8.5,
+        "active_directors": [
+          "DIN77778888"
+        ]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro"
+      },
+      "gst_mock": {
+        "status": "ACTIVE"
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": true,
+        "months_missed": 0
+      },
+      "ca_certificate_mock": {
+        "financial_year": "2024-25",
+        "turnover_cr": 8.5,
+        "ca_name": "CA Ramesh Kumar",
+        "udin": "24333ABC123456",
+        "udin_format_valid": true,
+        "udin_verification_state": "UDIN_FORMAT_VALID"
+      },
+      "submission_metadata": {
+        "ip_address": "172.16.0.10"
+      }
+    },
+    {
+      "id": "bidder-kilo-012",
+      "name": "Kilo Systems Ltd",
+      "scenario": "Technical Specs FAIL",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "turnover_cr": 6.0,
+        "local_content_pct": 55,
+        "subcontracting_pct": 18,
+        "pan": "KILOS6789M",
+        "is_msme": true
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 6.0,
+        "active_directors": [
+          "DIN99990000"
+        ]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro"
+      },
+      "gst_mock": {
+        "status": "ACTIVE"
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": true,
+        "months_missed": 0
+      },
+      "technical_specs": {
+        "Pump Capacity": 450,
+        "Pressure": 18,
+        "Efficiency": 87,
+        "Voltage": 415
+      },
+      "submission_metadata": {
+        "ip_address": "203.0.113.55"
       }
     }
   ]
