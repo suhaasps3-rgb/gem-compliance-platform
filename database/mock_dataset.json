@@ -69,11 +69,11 @@
         "enterprise_type": "Micro"
       },
       "mca21_mock": {
-        "reported_turnover_cr": 9.0
+        "reported_turnover_cr": 14.5
       },
       "udyam_mock": {
         "status": "ACTIVE",
-        "turnover_cr": 9.0
+        "turnover_cr": 14.5
       },
       "gst_mock": {
         "status": "ACTIVE"
@@ -133,6 +133,61 @@
             "reason": "Rule 151 Violation"
           }
         ]
+      }
+    },
+    {
+      "id": "bidder-echo-005",
+      "name": "Echo Enterprises",
+      "scenario": "Multi-Rule Violation (Make In India, Sub-contracting, GST)",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "is_msme": true,
+        "turnover_cr": 8.0,
+        "local_content_pct": 30,
+        "subcontracting_pct": 45,
+        "pan": "ECHO1234E"
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 8.5,
+        "active_directors": [
+          "DIN44445555"
+        ]
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": false,
+        "months_missed": 6
+      },
+      "vigilance_mock": {
+        "debarred_history": []
+      }
+    },
+    {
+      "id": "bidder-foxtrot-006",
+      "name": "Foxtrot Infrastructure",
+      "scenario": "Partial Violation (MII + GST)",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "is_msme": true,
+        "turnover_cr": 7.2,
+        "local_content_pct": 35,
+        "subcontracting_pct": 15,
+        "pan": "FXINF7890K"
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 7.2,
+        "active_directors": [
+          "DIN88771122",
+          "DIN88771133"
+        ]
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": false,
+        "months_missed": 3
+      },
+      "vigilance_mock": {
+        "debarred_history": []
       }
     }
   ]

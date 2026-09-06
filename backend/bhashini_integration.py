@@ -55,6 +55,6 @@ class BhashiniIntegrationLayer:
             return self._simulate_regional_document(source_lang)
             
     def _simulate_regional_document(self, lang: str) -> str:
-        # Simulated response showing what Bhashini would return after translating a regional MSME certificate
-        # Provides enough English text to trigger the Regex rules engine perfectly.
-        return 'Turnover limit Rs 10 Cr and Micro Enterprise Status verified. (Translated via Bhashini Sandbox)'
+        # Simulated response: what Bhashini would return after translating a regional MSME tender
+        # Malayalam doc translated to English — Turnover threshold ₹2000 Cr
+        return 'Turnover limit Rs 2000 Cr applicable for this tender. (Translated via Bhashini Sandbox from Malayalam)'

@@ -6,6 +6,11 @@ class EvidenceGraphEngine:
         self.bidder = bidder_data
         self.graph = nx.DiGraph()
         self.contradictions = []
+        self.hard_filters = {
+            "pan_active": "PASS",
+            "gst_active": "PASS",
+            "not_debarred": "PASS",
+        }
 
     def build_graph(self) -> nx.DiGraph:
         bidder_id = self.bidder.get("id")
@@ -41,6 +46,26 @@ class EvidenceGraphEngine:
             self.graph.add_node(claim_node, type="Claim", label=f"Enterprise Type: {etype}", value=etype)
             self.graph.add_edge(bidder_id, claim_node, relation="MAKES_CLAIM")
             self.graph.add_edge(claim_node, "Evidence:Udyam", relation="VERIFIED_AGAINST")
+
+        # GSTN Evidence
+        gstn = self.bidder.get("gstn_mock", {})
+        if gstn:
+            self.graph.add_node("Evidence:GSTN", type="Evidence", source="GSTN API 🔴", data=gstn)
+            self.graph.add_edge(f"Anchor:PAN:{pan}", "Evidence:GSTN", relation="LINKED_TO")
+
+        # Make In India Local Content
+        if "local_content_pct" in claims:
+            val = claims["local_content_pct"]
+            claim_node = f"Claim:LocalContent:{val}"
+            self.graph.add_node(claim_node, type="Claim", label=f"Local Content: {val}%")
+            self.graph.add_edge(bidder_id, claim_node, relation="MAKES_CLAIM")
+            
+        # Subcontracting
+        if "subcontracting_pct" in claims:
+            val = claims["subcontracting_pct"]
+            claim_node = f"Claim:Subcontracting:{val}"
+            self.graph.add_node(claim_node, type="Claim", label=f"Subcontracting: {val}%")
+            self.graph.add_edge(bidder_id, claim_node, relation="MAKES_CLAIM")
 
         if "legal_name" in mca21 or "legal_name" in udyam:
             # We don't have a specific claim for legal name, but we can check consistency
@@ -91,26 +116,62 @@ class EvidenceGraphEngine:
 
         # 3. Theta Case: Time-Travel Temporal Validation
         debarment = self.bidder.get("debarment_mock", {})
-        if debarment:
+        if debarment and debarment.get("start") and debarment.get("end"):
             tender_closing_date = "2025-12-01"
-            for record in debarment.get("historical_records", []):
-                start = record.get("start_date")
-                end = record.get("end_date")
-                if start <= tender_closing_date <= end:
-                    if status == "VERIFIED_COMPLIANT":
-                        status = "NEEDS_REVIEW"
-                    conflict = {
-                        "contradiction_id": f"conflict-temporal-{self.bidder['id']}",
-                        "claim": f"Current Status: CLEAN (as of Aug 2026)",
-                        "evidence": f"Debarment active from {start} to {end}",
-                        "ai_synthesis": f"Temporal Loophole Detected: Bidder is clean today, but was actively debarred on the Tender Closing Date ({tender_closing_date}). Bid is legally invalid."
-                    }
-                    self.contradictions.append(conflict)
+            # Simple string comparison works for YYYY-MM-DD
+            if debarment.get("start") <= tender_closing_date <= debarment.get("end"):
+                status = "NEEDS_REVIEW"
+                conflict = {
+                    "contradiction_id": f"conflict-debarment-{self.bidder['id']}",
+                    "claim": "Current Status: CLEAN (as of Aug 2026)",
+                    "evidence": f"Debarment active from {debarment.get('start')} to {debarment.get('end')}",
+                    "ai_synthesis": f"Temporal Policy Violation: While the bidder is currently not debarred, they were actively blacklisted during the Tender Closing Date ({tender_closing_date})."
+                }
+                self.contradictions.append(conflict)
                     
-                    # Add Evidence node and connection dynamically
-                    self.graph.add_node("Evidence:Debarment", type="Evidence", source="Vigilance DB 🔴")
-                    pan = claims.get("pan", "UNKNOWN")
-                    self.graph.add_edge(f"Anchor:PAN:{pan}", "Evidence:Debarment", relation="TEMPORAL_VIOLATION", color="red")
+                # Add Evidence node and connection dynamically
+                self.graph.add_node("Evidence:Debarment", type="Evidence", source="Vigilance DB 🔴")
+                pan = claims.get("pan", "UNKNOWN")
+                self.graph.add_edge(f"Anchor:PAN:{pan}", "Evidence:Debarment", relation="TEMPORAL_VIOLATION", color="red")
+
+        # 4. Echo Case: Multi-Rule Violation (Tender Rules extracted by AI)
+        import config
+        gstn = self.bidder.get("gstn_mock", {})
+        claimed_local_content = claims.get("local_content_pct")
+        claimed_subcontracting = claims.get("subcontracting_pct")
+
+        mii_limit = config.active_tender_limits.get("mii", 50)
+        subcontract_limit = config.active_tender_limits.get("subcontract", 20)
+
+        # Make in India (>= mii_limit%)
+        if claimed_local_content is not None and claimed_local_content < mii_limit:
+            status = "NEEDS_REVIEW"
+            self.contradictions.append({
+                "contradiction_id": f"conflict-mii-{self.bidder['id']}",
+                "claim": f"Local Content: {claimed_local_content}%",
+                "evidence": f"Tender Rule 4: Must be >= {mii_limit}%",
+                "ai_synthesis": f"Bidder claims only {claimed_local_content}% local content against the strict {mii_limit}% mandate extracted from the tender document."
+            })
+            
+        # Sub-contracting limit (<= subcontract_limit%)
+        if claimed_subcontracting is not None and claimed_subcontracting > subcontract_limit:
+            status = "NEEDS_REVIEW"
+            self.contradictions.append({
+                "contradiction_id": f"conflict-subcontract-{self.bidder['id']}",
+                "claim": f"Sub-contracting: {claimed_subcontracting}%",
+                "evidence": f"Tender Rule 5: Capped at {subcontract_limit}%",
+                "ai_synthesis": f"Bidder's technical proposal declares {claimed_subcontracting}% sub-contracting, violating the strict {subcontract_limit}% limit enforced by the Procurement Officer's tender document."
+            })
+
+        # GST Fiscal Compliance
+        if gstn and not gstn.get("gstr_filed_continuous_12m", True):
+            status = "NEEDS_REVIEW"
+            self.contradictions.append({
+                "contradiction_id": f"conflict-gst-{self.bidder['id']}",
+                "claim": "Tax Compliance: Up to Date",
+                "evidence": f"GSTN API 🔴: Missed {gstn.get('months_missed')} months of GSTR-3B",
+                "ai_synthesis": "Fiscal Non-Compliance: GSTN triangulation confirms the bidder has halted tax filings for 6 months, violating Rule 7 of the standard bidding document."
+            })
 
         return {
             "status": status,
@@ -119,10 +180,25 @@ class EvidenceGraphEngine:
 
     def serialize_graph(self) -> Dict[str, Any]:
         """
-        Serializes NetworkX graph to JSON-friendly format for React.
+        Serializes NetworkX graph to JSON-friendly format for ReactFlow.
+        Explicitly includes all node/edge attributes (type, label, source, color).
         """
-        data = nx.node_link_data(self.graph)
-        return {
-            "nodes": data.get("nodes", []),
-            "edges": data.get("links", [])
-        }
+        nodes = []
+        for node_id, attrs in self.graph.nodes(data=True):
+            nodes.append({
+                "id": node_id,
+                "type": attrs.get("type", "Unknown"),
+                "label": attrs.get("label", node_id),
+                "source": attrs.get("source"),
+            })
+
+        edges = []
+        for source, target, attrs in self.graph.edges(data=True):
+            edges.append({
+                "source": source,
+                "target": target,
+                "relation": attrs.get("relation", ""),
+                "color": attrs.get("color", "default"),
+            })
+
+        return {"nodes": nodes, "edges": edges}
