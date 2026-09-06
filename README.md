@@ -1,4 +1,4 @@
-# GeM Compliance Platform
+# GeM Compliance Platform.
 
 An intelligent, deterministic compliance engine for government procurement, built for the Smart India Hackathon.
 
