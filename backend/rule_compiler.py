@@ -27,7 +27,7 @@ class TenderRuleCompiler:
         # 1.5 Intelligent Routing Tripwire (REQ-2.2 and REQ-2.3)
         # If the PDF is a flattened image (e.g. regional language CA Certificate scan), PyMuPDF will find < 50 characters.
         if len(full_text.strip()) < 50:
-            from .bhashini_integration import BhashiniIntegrationLayer
+            from bhashini_integration import BhashiniIntegrationLayer
             bhashini = BhashiniIntegrationLayer()
             full_text = bhashini.ocr_and_translate(file_bytes=file_bytes, source_lang="hi")
         
@@ -37,10 +37,12 @@ class TenderRuleCompiler:
         # We look for keywords in the actual uploaded PDF text.
         
         # Check for Turnover/MSME clauses
-        if re.search(r'turnover\s*(limit|<|<=|exceeding)?\s*(rs\.?|inr|₹)?\s*10\s*cr', full_text, re.IGNORECASE) or re.search(r'micro', full_text, re.IGNORECASE):
+        turnover_match = re.search(r'turnover\s*(limit|<|<=|exceeding)?\s*(rs\.?|inr|₹)?\s*(\d+)\s*cr', full_text, re.IGNORECASE)
+        if turnover_match or re.search(r'micro', full_text, re.IGNORECASE):
+            cr_value = turnover_match.group(3) if turnover_match else "10"
             extracted_rules.append({
                 "clause": "Extracted Section - MSME Status",
-                "description": "Bidder must be registered as a Micro Enterprise (Turnover <= ₹10Cr). Found in uploaded document.",
+                "description": f"Bidder must be registered as a Micro Enterprise (Turnover <= ₹{cr_value}Cr). Found in uploaded document.",
                 "mapped_regulatory_id": str(uuid.uuid4())
             })
             
