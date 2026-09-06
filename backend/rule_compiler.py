@@ -23,6 +23,13 @@ class TenderRuleCompiler:
         full_text = ""
         for page in doc:
             full_text += page.get_text()
+            
+        # 1.5 Intelligent Routing Tripwire (REQ-2.2 and REQ-2.3)
+        # If the PDF is a flattened image (e.g. regional language CA Certificate scan), PyMuPDF will find < 50 characters.
+        if len(full_text.strip()) < 50:
+            from .bhashini_integration import BhashiniIntegrationLayer
+            bhashini = BhashiniIntegrationLayer()
+            full_text = bhashini.ocr_and_translate(file_bytes=file_bytes, source_lang="hi")
         
         extracted_rules = []
         
