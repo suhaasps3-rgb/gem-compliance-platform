@@ -14,7 +14,7 @@ When a contradiction is found (e.g., a bidder claims Micro MSME status, but MCA2
 
 ## Running Locally
 
-### 1. Start the Backend
+### 1. Start the Backend.
 ```bash
 cd backend
 python -m venv venv
