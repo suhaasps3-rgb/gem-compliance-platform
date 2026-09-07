@@ -4,13 +4,20 @@
     {
       "id": "bidder-acme-001",
       "name": "Acme Corp",
-      "scenario": "Green (The Baseline)",
+      "scenario": "Green (Compliant)",
       "expected_status": "VERIFIED_COMPLIANT",
       "claims": {
         "is_msme": true,
         "turnover_cr": 4.5,
         "local_content_pct": 80,
-        "pan": "ACME1234Q"
+        "pan": "ACME1234Q",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
         "reported_turnover_cr": 4.5,
@@ -24,8 +31,20 @@
         "turnover_cr": 4.5
       },
       "gst_mock": {
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
       },
+      "oem_mock": {
+        "status": "VERIFIED",
+        "vendor": "Acme Corp",
+        "validity": "2026-12-31",
+        "reference": "OEM/2026/01"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED",
+        "txn_id": "DL-999-ABCD"
+      },
+      "missing_documents": [],
       "submission_metadata": {
         "ip_address": "10.0.1.5",
         "user_agent": "Chrome/126"
@@ -73,30 +92,77 @@
         "Pressure": 22,
         "Efficiency": 91,
         "Voltage": 415
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "ai_recommendation": {
+        "decision": "RECOMMENDED",
+        "reasoning": "All extracted claims match statutory registry evidence perfectly. AI confirms Udyam, ITR, and MCA21 data reconcile.",
+        "red_flags": [],
+        "missing_docs": []
       }
     },
     {
       "id": "bidder-beta-002",
       "name": "BETA LLC",
-      "scenario": "Red (The Filter)",
-      "expected_status": "NON_COMPLIANT",
+      "scenario": "Yellow (Clarification Needed)",
+      "expected_status": "NEEDS_REVIEW",
       "notes": "Missing mandatory EMD exemption certificate.",
-      "claims": {},
+      "claims": {
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
       "mca21_mock": {},
       "udyam_mock": {},
-      "gst_mock": {},
+      "gst_mock": {
+        "return_filing_status": "FILED"
+      },
       "submission_metadata": {
         "ip_address": "192.168.1.225"
-      }
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "ai_recommendation": {
+        "decision": "NEEDS REVIEW",
+        "reasoning": "Bidder claimed Make-in-India Class-I exemption, but the uploaded MII document does not specify the local content percentage.",
+        "red_flags": [
+          "MII Declaration missing explicit Local Content %"
+        ],
+        "missing_docs": [
+          "Local_Content_Declaration"
+        ]
+      },
+      "active_contradictions": [
+        {
+          "source": "MII_Declaration",
+          "issue": "Missing Local Content %"
+        }
+      ]
     },
     {
       "id": "bidder-gamma-003",
       "name": "Gamma Technologies Pvt Ltd",
-      "scenario": "Yellow (The Anomaly)",
-      "expected_status": "NEEDS_REVIEW",
+      "scenario": "Red (Critical Fraud)",
+      "expected_status": "NON_COMPLIANT",
       "notes": "Entity name mismatch (Gamma Tech vs Gamma Technologies Pvt Ltd)",
       "claims": {
-        "pan": "BKKPA1234F"
+        "pan": "BKKPA1234F",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
         "legal_name": "Gamma Technologies Pvt Ltd"
@@ -105,11 +171,52 @@
         "legal_name": "Gamma Tech"
       },
       "gst_mock": {
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
       },
       "submission_metadata": {
         "ip_address": "192.168.1.64"
-      }
+      },
+      "oem_mock": {
+        "status": "INVALID_AUTHORIZATION_CODE",
+        "vendor": "Unknown Entity",
+        "validity": "N/A"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "pan": "REAL9999X"
+      },
+      "ai_recommendation": {
+        "decision": "NOT RECOMMENDED",
+        "reasoning": "CRITICAL FRAUD: Identity anchoring failed. The PAN extracted from the uploaded ITR belongs to a different entity. Furthermore, temporal evaluation found an active debarment on the tender closing date.",
+        "red_flags": [
+          "Cross-Bidder Forgery: Extracted PAN (REAL9999X) != Registered PAN (BKKPA1234F)",
+          "Active Debarment found in MoF Registry"
+        ],
+        "missing_docs": []
+      },
+      "debarment_mock": {
+        "historical_records": [
+          {
+            "start_date": "2023-01-01",
+            "end_date": "2026-01-01",
+            "reason": "Fraudulent Bid"
+          }
+        ]
+      },
+      "active_contradictions": [
+        {
+          "source": "Identity",
+          "issue": "PAN Mismatch (Forgery)"
+        },
+        {
+          "source": "Debarment",
+          "issue": "Active Debarment Found"
+        }
+      ]
     },
     {
       "id": "bidder-delta-004",
@@ -120,20 +227,49 @@
       "claims": {
         "pan": "DELTA5678Z",
         "turnover_cr": 8.5,
-        "enterprise_type": "Micro"
+        "enterprise_type": "Micro",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
-        "reported_turnover_cr": 14.5
+        "reported_turnover_cr": 14.5,
+        "company_name": "Delta Solutions Private Limited"
       },
       "udyam_mock": {
         "status": "ACTIVE",
         "turnover_cr": 14.5
       },
       "gst_mock": {
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "legal_name": "Delta Solutions",
+        "return_filing_status": "FILED"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "mii_mock": {
+        "local_content_pct": 38,
+        "classification": "Non-Local Supplier"
       },
       "submission_metadata": {
         "ip_address": "10.0.1.5"
+      },
+      "oem_mock": {
+        "status": "AUTHORIZATION_REVOKED",
+        "vendor": "Delta Solutions",
+        "validity": "2024-01-01"
+      },
+      "digilocker_mock": {
+        "status": "NOT_FOUND"
+      },
+      "debarment_mock": {
+        "is_debarred_currently": true
       }
     },
     {
@@ -142,7 +278,14 @@
       "scenario": "Wow Case (The Cartel) - Bidder 1",
       "expected_status": "INVESTIGATIVE_LEAD",
       "claims": {
-        "pan": "EPSILON123"
+        "pan": "EPSILON123",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
         "active_directors": [
@@ -155,6 +298,13 @@
       },
       "submission_metadata": {
         "ip_address": "192.168.1.34"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
       }
     },
     {
@@ -163,7 +313,14 @@
       "scenario": "Wow Case (The Cartel) - Bidder 2",
       "expected_status": "INVESTIGATIVE_LEAD",
       "claims": {
-        "pan": "ZETATRD999"
+        "pan": "ZETATRD999",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
         "active_directors": [
@@ -176,6 +333,13 @@
       },
       "submission_metadata": {
         "ip_address": "192.168.1.12"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
       }
     },
     {
@@ -185,7 +349,14 @@
       "expected_status": "NEEDS_REVIEW",
       "notes": "Debarment expired in 2026, but was active during Tender Closing Date (2025).",
       "claims": {
-        "pan": "THETA4444X"
+        "pan": "THETA4444X",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "debarment_mock": {
         "is_debarred_currently": false,
@@ -199,6 +370,13 @@
       },
       "submission_metadata": {
         "ip_address": "192.168.1.177"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
       }
     },
     {
@@ -211,7 +389,12 @@
         "turnover_cr": 8.0,
         "local_content_pct": 30,
         "subcontracting_pct": 45,
-        "pan": "ECHO1234E"
+        "pan": "ECHO1234E",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate"
+        ]
       },
       "mca21_mock": {
         "reported_turnover_cr": 8.5,
@@ -227,8 +410,27 @@
       "vigilance_mock": {
         "debarred_history": []
       },
+      "oem_mock": {
+        "status": "EXPIRED",
+        "vendor": "Echo Enterprises",
+        "validity": "2023-01-01"
+      },
+      "digilocker_mock": {
+        "status": "NOT_VERIFIED"
+      },
+      "missing_documents": [
+        "Annexure_VII_Local_Content_Declaration.pdf",
+        "Form_B_Financial_Standing.pdf"
+      ],
       "submission_metadata": {
         "ip_address": "192.168.1.151"
+      },
+      "itr_mock": {
+        "status": "NOT_FILED",
+        "last_filed_year": "2023"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
       }
     },
     {
@@ -241,7 +443,14 @@
         "turnover_cr": 7.2,
         "local_content_pct": 35,
         "subcontracting_pct": 15,
-        "pan": "FXINF7890K"
+        "pan": "FXINF7890K",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
         "reported_turnover_cr": 7.2,
@@ -276,6 +485,21 @@
         "Pressure": 18,
         "Efficiency": 87,
         "Voltage": 415
+      },
+      "oem_mock": {
+        "status": "VENDOR_NOT_AUTHORIZED",
+        "vendor": "Foxtrot Infra",
+        "validity": "N/A"
+      },
+      "digilocker_mock": {
+        "status": "HASH_MISMATCH"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
       }
     },
     {
@@ -288,7 +512,14 @@
         "local_content_pct": 65,
         "subcontracting_pct": 10,
         "pan": "INDGO9012P",
-        "is_msme": true
+        "is_msme": true,
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
         "reported_turnover_cr": 3.2,
@@ -301,7 +532,8 @@
         "enterprise_type": "Micro"
       },
       "gst_mock": {
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
       },
       "gstn_mock": {
         "status": "ACTIVE",
@@ -337,6 +569,18 @@
       },
       "submission_metadata": {
         "ip_address": "172.16.0.10"
+      },
+      "oem_mock": {
+        "status": "VERIFIED",
+        "vendor": "Indigo",
+        "validity": "2028-01-01"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
       }
     },
     {
@@ -349,7 +593,14 @@
         "local_content_pct": 60,
         "subcontracting_pct": 12,
         "pan": "JULET4567K",
-        "is_msme": true
+        "is_msme": true,
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
       },
       "mca21_mock": {
         "reported_turnover_cr": 8.5,
@@ -362,7 +613,8 @@
         "enterprise_type": "Micro"
       },
       "gst_mock": {
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
       },
       "gstn_mock": {
         "status": "ACTIVE",
@@ -379,6 +631,18 @@
       },
       "submission_metadata": {
         "ip_address": "172.16.0.10"
+      },
+      "oem_mock": {
+        "status": "EXPIRED",
+        "vendor": "Juliet",
+        "validity": "2021-12-31"
+      },
+      "digilocker_mock": {
+        "status": "INVALID_DOCUMENT_ID"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
       }
     },
     {
@@ -391,7 +655,11 @@
         "local_content_pct": 55,
         "subcontracting_pct": 18,
         "pan": "KILOS6789M",
-        "is_msme": true
+        "is_msme": true,
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card"
+        ]
       },
       "mca21_mock": {
         "reported_turnover_cr": 6.0,
@@ -404,7 +672,8 @@
         "enterprise_type": "Micro"
       },
       "gst_mock": {
-        "status": "ACTIVE"
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
       },
       "gstn_mock": {
         "status": "ACTIVE",
@@ -419,6 +688,21 @@
       },
       "submission_metadata": {
         "ip_address": "203.0.113.55"
+      },
+      "oem_mock": {
+        "status": "VERIFIED",
+        "vendor": "Kilo",
+        "validity": "2027-01-01"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED"
+      },
+      "debarment_mock": {
+        "is_debarred_currently": true
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
       }
     }
   ]

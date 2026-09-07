@@ -5,10 +5,13 @@ import Viewer from './components/PdfViewer/Viewer';
 import Dashboard from './Dashboard';
 import TenderConfigurator from './TenderConfigurator';
 
+import BatchProcessor from './components/BatchProcessor';
+
 function App() {
-  const [currentBidder, setCurrentBidder] = useState('bidder-delta-004');
+  const [currentBidder, setCurrentBidder] = useState('bidder-acme-001');
   const [cartelData, setCartelData] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showBatchMode, setShowBatchMode] = useState(false);
 
   const runCartelScan = async () => {
     setIsScanning(true);
@@ -40,6 +43,12 @@ function App() {
         <div className="flex gap-3 items-center">
           <TenderConfigurator />
           <button
+            onClick={() => setShowBatchMode(true)}
+            className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold px-4 py-1.5 rounded flex items-center transition shadow-sm"
+          >
+            ⚡ Batch Mode
+          </button>
+          <button
             onClick={runCartelScan}
             disabled={isScanning}
             className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded flex items-center transition shadow-sm disabled:opacity-50"
@@ -55,11 +64,9 @@ function App() {
             onChange={(e) => setCurrentBidder(e.target.value)}
             className="bg-slate-800 text-white text-sm rounded px-3 py-1.5 border border-slate-700 outline-none focus:border-blue-500"
           >
-            <option value="bidder-acme-001">Acme Corp (Green Baseline)</option>
-            <option value="bidder-delta-004">Delta Solutions (Red Contradiction)</option>
-            <option value="bidder-theta-007">Theta Logistics (Time-Travel)</option>
-            <option value="bidder-echo-005">Echo Enterprises (Multi-Rule Violation)</option>
-            <option value="bidder-foxtrot-006">Foxtrot Infrastructure (Partial Violation)</option>
+            <option value="bidder-acme-001">Bidder A: Acme Corp (Green)</option>
+            <option value="bidder-beta-002">Bidder B: Beta LLC (Yellow)</option>
+            <option value="bidder-gamma-003">Bidder C: Gamma Tech (Red)</option>
           </select>
 
           <div className="text-sm font-medium text-slate-300 bg-slate-800 px-3 py-1.5 rounded">
@@ -156,6 +163,8 @@ function App() {
           </div>
         </div>
       )}
+
+      {showBatchMode && <BatchProcessor onClose={() => setShowBatchMode(false)} />}
     </div>
   );
 }

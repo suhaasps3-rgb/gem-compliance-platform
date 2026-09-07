@@ -79,7 +79,7 @@ export default function TenderConfigurator() {
 
               {error && <div className="text-red-600 text-sm mb-4 bg-red-50 p-3 rounded border border-red-200">{error}</div>}
 
-              {tenderRules.length > 0 && (
+              {tenderRules?.length > 0 && (
                 <div>
                   <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Extracted Deterministic Rules</h4>
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-2">

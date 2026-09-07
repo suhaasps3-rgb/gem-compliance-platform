@@ -25,6 +25,10 @@ HTML_TEMPLATES = {
         <p><b>Challan No:</b> 000123456789</p>
         <h3 style="color: green;">Status: PAID / Payment Successful</h3>
         <p>This is a computer generated statement.</p>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "esic_demo.pdf": """
@@ -40,20 +44,28 @@ HTML_TEMPLATES = {
         <p><b>Challan No:</b> 03126123456789</p>
         <br/>
         <h3 style="color: green;">Status: PAID / Challan Paid</h3>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "startup_india_demo.pdf": """
     <html><body style="font-family: Arial; padding: 40px;">
         <h1 style="text-align:center; color: #E74C3C;">STARTUP INDIA</h1>
-        <h2 style="text-align:center;">CERTIFICATE OF RECOGNITION</h2>
+        <h2 style="text-align:center;">CERTIFICATE OF REGISTRATION</h2>
         <hr/>
         <p>This is to certify that</p>
         <h3 style="text-align:center;">Acme Innovations Pvt Ltd</h3>
-        <p>has been recognized as a Startup by the Department for Promotion of Industry and Internal Trade (DPIIT).</p>
-        <p><b>Recognition Number:</b> DIPP12345</p>
-        <p><b>Date of Recognition:</b> 15-05-2023</p>
-        <p><b>Valid Till:</b> 14-05-2033 (Perpetual)</p>
-        <h3 style="color: green; text-align: center;">Status: ACTIVE / Recognized</h3>
+        <p>was previously registered as a Startup by the Department for Promotion of Industry and Internal Trade (DPIIT).</p>
+        <p><b>Registration Number:</b> DIPP12345</p>
+        <p><b>Date of Registration:</b> 15-05-2023</p>
+        <p><b>Expired On:</b> 14-05-2024</p>
+        <h3 style="color: red; text-align: center;">Status: INACTIVE / Revoked</h3>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "nsic_demo.pdf": """
@@ -67,6 +79,10 @@ HTML_TEMPLATES = {
         <p><b>Date of Issue:</b> 10-06-2023</p>
         <p><b>Valid Upto:</b> 09-06-2025</p>
         <p>Registered under single point registration scheme for EMD exemption.</p>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "work_order_1.pdf": """
@@ -79,9 +95,13 @@ HTML_TEMPLATES = {
         <p><b>Order Date:</b> 01-04-2023</p>
         <br/>
         <p><b>Scope:</b> Supply and commissioning of industrial pump systems.</p>
-        <p><b>Order Value:</b> Rs. 2.10 Crore</p>
+        <p><b>Order Value:</b> Rs. 21.81 Crore</p>
         <p><b>Date of Completion:</b> 30-09-2023</p>
         <h3 style="color: green;">Status: Completed</h3>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "work_order_2.pdf": """
@@ -97,6 +117,10 @@ HTML_TEMPLATES = {
         <p><b>Total Amount:</b> Rs. 1.75 Crore</p>
         <p><b>Completed on:</b> 10-03-2023</p>
         <h3 style="color: green;">Status: Executed</h3>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "work_order_3.pdf": """
@@ -112,6 +136,10 @@ HTML_TEMPLATES = {
         <p><b>Contract Value:</b> ₹ 3.50 Crore</p>
         <p><b>Completion Date:</b> 25-05-2025</p>
         <h3 style="color: green;">Status: Executed</h3>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "ca_turnover.pdf": """
@@ -119,18 +147,19 @@ HTML_TEMPLATES = {
         <h1 style="text-align:center;">TO WHOMSOEVER IT MAY CONCERN</h1>
         <h2 style="text-align:center;">TURNOVER CERTIFICATE</h2>
         <hr/>
-        <p>This is to certify that the Annual Turnover of <b>Acme Innovations Pvt Ltd</b> for the financial years is as follows:</p>
-        <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%;">
-            <tr><th>Financial Year</th><th>Turnover (INR)</th></tr>
-            <tr><td>2022-23</td><td>Rs. 4.10 Crore</td></tr>
-            <tr><td>2023-24</td><td>Rs. 6.20 Crore</td></tr>
-            <tr><td><b>2024-25</b></td><td><b>Rs. 8.5 Crore</b></td></tr>
-        </table>
+        <p>This is to certify the financial details based on the audited balance sheets.</p>
+        <p><b>Name of Company:</b> Acme Innovations Pvt Ltd</p>
+        <p><b>Financial Year:</b> 2024-25</p>
+        <p><b>Annual Turnover:</b> Rs. 8.50 Crore</p>
         <br/>
         <p><b>Name of CA:</b> CA Ramesh Kumar</p>
         <p><b>Membership No:</b> 123456</p>
-        <p><b>UDIN:</b> 24333ABC123456</p>
+        <p><b>UDIN:</b> 24123456ABCDEF9876</p>
         <p><b>Certificate Date:</b> 01-08-2026</p>
+        <div style="margin-top: 50px; display: inline-block; border: 3px solid #2980b9; color: #2980b9; padding: 15px; border-radius: 5px; font-family: monospace; font-weight: bold; transform: rotate(-5deg);">
+            ★ AUTHORIZED SIGNATORY ★<br/>
+            <span style="font-size: 10px;">[Digitally Signed & Stamped]</span>
+        </div>
     </body></html>
     """,
     "technical_catalog.pdf": """
@@ -151,6 +180,21 @@ HTML_TEMPLATES = {
         </ul>
         <br/>
         <p>Certified for continuous heavy-duty industrial applications.</p>
+    </body></html>
+    """,
+    "work_order_unsigned.pdf": """
+    <html><body style="font-family: Arial; padding: 40px;">
+        <h2>PURCHASE ORDER</h2>
+        <hr/>
+        <p><b>To M/s:</b> Echo Enterprises</p>
+        <p><b>Client:</b> BSNL</p>
+        <p><b>PO No:</b> WO-9999</p>
+        <p><b>Issue Date:</b> 01-01-2024</p>
+        <br/>
+        <p><b>Subject:</b> Supply of networking equipment.</p>
+        <p><b>Total Amount:</b> Rs. 4.20 Crore</p>
+        <p><b>Completed on:</b> 10-10-2024</p>
+        <h3 style="color: green;">Status: Executed</h3>
     </body></html>
     """
 }

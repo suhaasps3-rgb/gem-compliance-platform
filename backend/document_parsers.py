@@ -25,7 +25,7 @@ def parse_epfo(pdf_bytes: bytes) -> dict:
         "document_type": "EPFO_STATEMENT",
         "extracted": {},
         "verification": {},
-        "source": "PDF_OCR"
+        "source": "PDF_PARSED"
     }
 
     # Employer name
@@ -86,7 +86,7 @@ def parse_epfo(pdf_bytes: bytes) -> dict:
         "contribution_status": contribution_status,
         "contribution_verified": paid,
         "employee_count_found": bool(result["extracted"].get("employee_count")),
-        "source": "PDF_OCR",
+        "source": "PDF_PARSED",
         "note": "In production: verify via EPFO Unified Portal with employer code for live compliance status."
     }
 
@@ -100,7 +100,7 @@ def parse_esic(pdf_bytes: bytes) -> dict:
         "document_type": "ESIC_CONTRIBUTION_STATEMENT",
         "extracted": {},
         "verification": {},
-        "source": "PDF_OCR"
+        "source": "PDF_PARSED"
     }
 
     # Employer name
@@ -141,7 +141,7 @@ def parse_esic(pdf_bytes: bytes) -> dict:
         "employer_code_found": bool(result["extracted"].get("employer_code")),
         "contribution_status": status,
         "esic_verified": paid,
-        "source": "PDF_OCR",
+        "source": "PDF_PARSED",
         "note": "In production: verify via ESIC portal with employer code for live compliance status."
     }
 
@@ -155,7 +155,7 @@ def parse_startup(pdf_bytes: bytes) -> dict:
         "document_type": "STARTUP_INDIA_RECOGNITION",
         "extracted": {},
         "verification": {},
-        "source": "PDF_OCR"
+        "source": "PDF_PARSED"
     }
 
     # Recognition number (DIPP/DPIIT prefix)
@@ -187,7 +187,7 @@ def parse_startup(pdf_bytes: bytes) -> dict:
         "recognition_number_found": recog_num_found,
         "certificate_active": active and recog_num_found,
         "emd_exemption_supported": active and recog_num_found,  # Startups may claim EMD exemption
-        "source": "PDF_OCR",
+        "source": "PDF_PARSED",
         "note": "EMD exemption claim requires tender-specific eligibility check. Certificate validity does not automatically guarantee exemption for all tenders."
     }
 
@@ -201,7 +201,7 @@ def parse_nsic(pdf_bytes: bytes) -> dict:
         "document_type": "NSIC_REGISTRATION_CERTIFICATE",
         "extracted": {},
         "verification": {},
-        "source": "PDF_OCR"
+        "source": "PDF_PARSED"
     }
 
     # Certificate number
@@ -234,7 +234,7 @@ def parse_nsic(pdf_bytes: bytes) -> dict:
         "certificate_number_found": cert_found,
         "nsic_valid": cert_found,
         "emd_exemption_supported": cert_found,  # NSIC-registered MSEs claim EMD exemption
-        "source": "PDF_OCR",
+        "source": "PDF_PARSED",
         "note": "NSIC registration provides EMD exemption eligibility. Verify currency of certificate before awarding exemption."
     }
 
@@ -248,16 +248,16 @@ def parse_work_order(pdf_bytes: bytes) -> dict:
         "document_type": "WORK_ORDER",
         "extracted": {},
         "verification": {},
-        "source": "PDF_OCR"
+        "source": "PDF_PARSED"
     }
 
     # Client / Buyer
-    m = re.search(r'(?:Client|Buyer|Issued by|To|From)[:\s]+([A-Z][A-Za-z\s&\.]+(?:Ltd|Limited|Corporation|Corp|Industries|ONGC|HPCL|BPCL|CPCL|Reliance|Tata))', text, re.IGNORECASE)
+    m = re.search(r'(?:Client|Buyer|Issued by|To|From)[:\s]+([A-Z][A-Za-z \t&\.]+(?:Ltd|Limited|Corporation|Corp|Industries|ONGC|HPCL|BPCL|CPCL|Reliance|Tata))', text, re.IGNORECASE)
     if m:
         result["extracted"]["client"] = m.group(1).strip()
 
     # Vendor / Contractor
-    m = re.search(r'(?:Vendor|Contractor|Supplier|To M/s|Dear M/s)[:\s]+([A-Z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|Private|LLP|Services)?)', text, re.IGNORECASE)
+    m = re.search(r'(?:Vendor|Contractor|Supplier|To M/s|Dear M/s)[:\s]+([A-Z][A-Za-z \t&\.]+(?:Ltd|Limited|Pvt|Private|LLP|Services)?)', text, re.IGNORECASE)
     if m:
         result["extracted"]["vendor"] = m.group(1).strip()
 
@@ -324,7 +324,7 @@ def parse_work_order(pdf_bytes: bytes) -> dict:
         "value_extracted": value_found,
         "date_extracted": bool(result["extracted"].get("order_date")),
         "extraction_confidence": round(confidence, 2),
-        "source": "PDF_OCR",
+        "source": "PDF_PARSED",
         "note": "Order value treated as executed value only if completion evidence found. Manual review recommended for high-value claims."
     }
     if confidence < 0.5:
@@ -341,28 +341,36 @@ def parse_turnover_ca(pdf_bytes: bytes) -> dict:
         "document_type": "CA_TURNOVER_CERTIFICATE",
         "extracted": {},
         "verification": {},
-        "source": "PDF_OCR"
+        "source": "PDF_PARSED"
     }
 
-    # Company Name
-    m = re.search(r'(?:Company Name|Name of Company|M/s)[:\s]+([A-Z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|LLP|Private))', text, re.IGNORECASE)
+    # Company Name — multiple patterns
+    m = re.search(r'(?:Company Name|Name of Company|Name of the Company|M/s)[:\s]+([A-Za-z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|LLP|Private|Corp|Corporation|Inc|Industries|Enterprises|Solutions|Technologies|Infra|Systems))', text, re.IGNORECASE)
+    if not m:
+        # Fallback: "books of accounts of XXXX" or "certified that XXXX"
+        m = re.search(r'(?:books of accounts? of|certify that|certif(?:ied|y) the (?:financial )?details? (?:of|for)|on behalf of)\s+([A-Z][A-Za-z\s&\.]+?)(?:\.|,|\n|for the|Financial|FY)', text, re.IGNORECASE)
     if m:
-        result["extracted"]["company_name"] = m.group(1).strip()
+        result["extracted"]["company_name"] = m.group(1).strip().rstrip('.')
 
     # Financial Year
-    m = re.search(r'(?:Financial Year|FY|For the year)[:\s]*(\d{4}[-–]\d{2,4})', text, re.IGNORECASE)
+    m = re.search(r'(?:Financial Year|FY|For the year)[:\s]*(\d{4}[–\-]\d{2,4})', text, re.IGNORECASE)
     if m:
         result["extracted"]["financial_year"] = m.group(1).strip()
 
-    # Turnover
+    # Turnover — with currency prefix
     m = re.search(r'(?:Annual Turnover|Turnover|Gross Revenue|Net Sales)[^\d]*(?:Rs\.?|INR|₹)[\s\.]*(\d[\d,\.]+)\s*(?:Crore|Cr\.?)', text, re.IGNORECASE)
     if m:
         result["extracted"]["turnover_cr"] = float(m.group(1).replace(',', ''))
     else:
-        # Try lakh
-        m = re.search(r'(?:Annual Turnover|Turnover)[^\d]*(?:Rs\.?|₹)[\s\.]*(\d[\d,\.]+)\s*(?:Lakh|L)', text, re.IGNORECASE)
+        # Without currency prefix: "5.2 Crore" directly after FY line
+        m = re.search(r'(?:Annual Turnover|Turnover|FY\s*\d{4}[–\-]\d{2,4})[:\s]*(?:Rs\.?|INR|₹)?\s*(\d[\d,\.]+)\s*(?:Crore|Cr\.?)', text, re.IGNORECASE)
         if m:
-            result["extracted"]["turnover_cr"] = round(float(m.group(1).replace(',', '')) / 100, 4)
+            result["extracted"]["turnover_cr"] = float(m.group(1).replace(',', ''))
+        else:
+            # Try lakh
+            m = re.search(r'(?:Annual Turnover|Turnover)[^\d]*(?:Rs\.?|₹)[\s\.]*(\d[\d,\.]+)\s*(?:Lakh|L)', text, re.IGNORECASE)
+            if m:
+                result["extracted"]["turnover_cr"] = round(float(m.group(1).replace(',', '')) / 100, 4)
 
     # CA Name
     m = re.search(r'(?:CA|Chartered Accountant|Name of CA)[:\s]+([A-Z][A-Za-z\s\.]+?)(?=\n|MRN|Membership|UDIN)', text, re.IGNORECASE)
@@ -374,8 +382,8 @@ def parse_turnover_ca(pdf_bytes: bytes) -> dict:
     if m:
         result["extracted"]["membership_number"] = m.group(1)
 
-    # UDIN — format: YYXXXXXXYYYYYYYYYY (20 chars)
-    m = re.search(r'\b(\d{2}[A-Z0-9]{6}[A-Z0-9]{12})\b|UDIN[:\s]*([A-Z0-9]{18,22})', text)
+    # UDIN — format: YYXXXXXXYYYYYYYYYY (18 chars)
+    m = re.search(r'\b(\d{2}[A-Z0-9]{6}[A-Z0-9]{10})\b|UDIN[:\s]*([A-Z0-9]{18})', text)
     udin_value = None
     if m:
         udin_value = (m.group(1) or m.group(2))
@@ -389,7 +397,7 @@ def parse_turnover_ca(pdf_bytes: bytes) -> dict:
     # UDIN validation states (format only — no live ICAI API)
     udin_format_valid = False
     if udin_value:
-        udin_format_valid = bool(re.match(r'^\d{2}[A-Z0-9]{6}[A-Z0-9]{12}$', udin_value))
+        udin_format_valid = bool(re.match(r'^\d{2}[A-Z0-9]{6}[A-Z0-9]{10}$', udin_value))
 
     if udin_value and udin_format_valid:
         udin_state = "UDIN_FORMAT_VALID"
@@ -404,7 +412,7 @@ def parse_turnover_ca(pdf_bytes: bytes) -> dict:
         "udin_found": bool(udin_value),
         "udin_format_valid": udin_format_valid,
         "udin_verification_state": udin_state,
-        "source": "PDF_OCR",
+        "source": "PDF_PARSED",
         "note": "Format/document validation completed — external ICAI UDIN verification unavailable in demo mode. Production deployment should call ICAI UDIN verification API.",
         "disclaimer": "This is document-level validation only. It does not constitute official government verification."
     }

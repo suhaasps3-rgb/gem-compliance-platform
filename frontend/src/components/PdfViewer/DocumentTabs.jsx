@@ -33,7 +33,11 @@ export default function DocumentTabs() {
     { id: 'nsic', label: 'NSIC Certificate' },
     { id: 'work_order', label: 'Work Order' },
     { id: 'turnover', label: 'CA Turnover' },
-    { id: 'technical', label: 'Tech Catalog' }
+    { id: 'technical', label: 'Tech Catalog' },
+    { id: 'itr', label: 'ITR Return' },
+    { id: 'mii', label: 'MII Declaration' },
+    { id: 'gstr3b', label: 'GSTR-3B Return' },
+    { id: 'debarment', label: 'Debarment Decl.' }
   ];
 
 

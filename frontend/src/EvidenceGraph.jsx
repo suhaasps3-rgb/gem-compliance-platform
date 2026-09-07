@@ -113,31 +113,32 @@ export default function EvidenceGraph({ graphData }) {
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm mb-6 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-5 py-3 bg-slate-50 border-b border-slate-100">
-        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-            d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-        </svg>
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-          Interactive Evidence Provenance Graph
-        </span>
-        <span className="ml-auto text-[10px] text-slate-400 italic">Drag nodes · Scroll to zoom</span>
-      </div>
-
-      {/* Legend */}
-      <div className="flex gap-4 px-5 py-2 border-b border-slate-100 bg-white text-[10px]">
-        {[['Bidder', '#1e293b', '#1e293b'], ['Claim', '#1d4ed8', '#eff6ff'], ['Evidence', '#065f46', '#ecfdf5'], ['Anchor', '#86198f', '#fdf4ff']].map(([label, color, bg]) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <div style={{ background: bg, border: `1.5px solid ${color}`, width: 12, height: 12, borderRadius: 3 }} />
-            <span className="text-slate-500 font-medium">{label}</span>
-          </div>
-        ))}
-        <div className="flex items-center gap-1.5 ml-auto">
-          <div style={{ width: 24, height: 2, background: '#ef4444', borderRadius: 1 }} />
-          <span className="text-red-500 font-medium">Conflict</span>
+      
+      <div className="flex flex-col gap-2 px-5 py-3 border-b border-slate-100 bg-white">
+        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Interactive Evidence Provenance Graph
+        </div>
+        <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+           <span>Flow:</span>
+           <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Requirement</span>
+           <span>→</span>
+           <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Document</span>
+           <span>→</span>
+           <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Claim</span>
+           <span>→</span>
+           <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Evidence</span>
+           <span>→</span>
+           <span className="bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">Rule</span>
+           <span>→</span>
+           <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Contradiction</span>
+           <span>→</span>
+           <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">Risk</span>
+           <span>→</span>
+           <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">Recommendation</span>
         </div>
       </div>
+
 
       {/* Graph Canvas */}
       <div style={{ height: 340 }}>

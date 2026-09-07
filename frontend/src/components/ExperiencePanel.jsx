@@ -4,7 +4,13 @@ import { useDashboardStore } from '../store/dashboardStore';
 export default function ExperiencePanel() {
   const { experienceResult } = useDashboardStore();
 
-  if (!experienceResult) return null;
+  if (!experienceResult) return (
+    <div className="bg-white border rounded-lg overflow-hidden mb-6 shadow-sm p-8 text-center text-gray-400 border-dashed">
+      <div className="text-3xl mb-2">💼</div>
+      <h3 className="font-semibold text-gray-600 mb-1">Past Experience Validation</h3>
+      <p className="text-sm">No work orders processed yet. Upload Work Orders or use Batch Mode to calculate eligibility.</p>
+    </div>
+  );
 
   return (
     <div className="bg-white border rounded-lg overflow-hidden mb-6 shadow-sm">

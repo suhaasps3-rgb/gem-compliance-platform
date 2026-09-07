@@ -4,7 +4,13 @@ import { useDashboardStore } from '../store/dashboardStore';
 export default function TechnicalMatrix() {
   const { technicalMatrixResult } = useDashboardStore();
 
-  if (!technicalMatrixResult) return null;
+  if (!technicalMatrixResult) return (
+    <div className="bg-white border rounded-lg overflow-hidden mb-6 shadow-sm p-8 text-center text-gray-400 border-dashed">
+      <div className="text-3xl mb-2">⚙️</div>
+      <h3 className="font-semibold text-gray-600 mb-1">Technical Specifications Matrix</h3>
+      <p className="text-sm">No technical catalogs processed yet. Upload a Tech Catalog or use Batch Mode to evaluate parameters.</p>
+    </div>
+  );
 
   return (
     <div className="bg-white border rounded-lg overflow-hidden mb-6 shadow-sm">
