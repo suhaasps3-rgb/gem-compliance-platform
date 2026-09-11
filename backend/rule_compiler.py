@@ -23,14 +23,6 @@ class TenderRuleCompiler:
         full_text = ""
         for page in doc:
             full_text += page.get_text()
-            
-        # 1.5 Intelligent Routing Tripwire (REQ-2.2 and REQ-2.3)
-        # If the PDF is a flattened image (e.g. regional language CA Certificate scan), PyMuPDF will find < 50 characters.
-        if len(full_text.strip()) < 50:
-            from bhashini_integration import BhashiniIntegrationLayer
-            bhashini = BhashiniIntegrationLayer()
-            full_text = bhashini.ocr_and_translate(file_bytes=file_bytes, source_lang="hi")
-        
         extracted_rules = []
         
         # 2. Dynamic Parsing Logic
@@ -116,8 +108,7 @@ class TenderRuleCompiler:
 
     def extract_rules_from_text(self, text: str) -> list:
         """
-        Same extraction logic as extract_rules_from_pdf but accepts
-        pre-translated plain text (e.g. from Bhashini OCR output).
+        Extract rules from plain text input.
         """
         import re, uuid as _uuid
         import config
@@ -130,8 +121,8 @@ class TenderRuleCompiler:
             cr_limit = turnover_match.group(1) if turnover_match else "2000"
             config.active_tender_limits["msme"] = int(cr_limit)
             extracted_rules.append({
-                "clause": "MSME Financial Capacity (Bhashini Extracted)",
-                "description": f"Turnover limit Rs. {cr_limit} Cr extracted from regional-language tender via Bhashini translation.",
+                "clause": "MSME Financial Capacity",
+                "description": f"Turnover limit Rs. {cr_limit} Cr extracted from tender.",
                 "mapped_regulatory_id": str(_uuid.uuid4())
             })
 
@@ -140,8 +131,8 @@ class TenderRuleCompiler:
             pct = sub_match.group(1) if sub_match else "20"
             config.active_tender_limits["subcontract"] = int(pct)
             extracted_rules.append({
-                "clause": "Sub-contracting Limit (Bhashini Extracted)",
-                "description": f"Sub-contracting capped at {pct}% per regional tender document.",
+                "clause": "Sub-contracting Limit",
+                "description": f"Sub-contracting capped at {pct}% per tender document.",
                 "mapped_regulatory_id": str(_uuid.uuid4())
             })
 
@@ -150,14 +141,14 @@ class TenderRuleCompiler:
             pct = mii_match.group(1) if mii_match else "50"
             config.active_tender_limits["mii"] = int(pct)
             extracted_rules.append({
-                "clause": "Make in India Local Content (Bhashini Extracted)",
-                "description": f"Minimum local content {pct}% extracted from translated regional tender.",
+                "clause": "Make in India Local Content",
+                "description": f"Minimum local content {pct}% extracted from tender.",
                 "mapped_regulatory_id": str(_uuid.uuid4())
             })
 
         extracted_rules.append({
-            "clause": "GFR 2017 Rule 175 (Bhashini — Code of Integrity)",
-            "description": "Baseline statutory rule applied after Bhashini translation pipeline.",
+            "clause": "GFR 2017 Rule 175 (Code of Integrity)",
+            "description": "Baseline statutory rule applied to tender evaluation.",
             "mapped_regulatory_id": str(_uuid.uuid4())
         })
 

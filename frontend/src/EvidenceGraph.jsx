@@ -86,24 +86,25 @@ export default function EvidenceGraph({ graphData }) {
         target: e.target,
         type: 'smoothstep',
         animated: isRed,
-        label: e.relation,
+        className: isRed ? 'red-error-edge' : '',
+        label: isRed ? `⚠️ ${e.relation}` : e.relation,
         labelStyle: {
-          fill: isRed ? '#dc2626' : '#64748b',
+          fill: isRed ? '#b91c1c' : '#64748b',
           fontSize: 9,
-          fontWeight: 700,
+          fontWeight: 800,
         },
-        labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9, rx: 4 },
+        labelBgStyle: { fill: isRed ? '#fef2f2' : '#ffffff', fillOpacity: 0.95, rx: 4, stroke: isRed ? '#fca5a5' : '#e2e8f0', strokeWidth: isRed ? 1 : 0.5 },
         labelBgPadding: [4, 6],
         style: {
           stroke: isRed ? '#ef4444' : '#94a3b8',
-          strokeWidth: isRed ? 2 : 1.5,
+          strokeWidth: isRed ? 3 : 1.5,
           strokeDasharray: isRed ? '6 3' : undefined,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           color: isRed ? '#ef4444' : '#94a3b8',
-          width: 16,
-          height: 16,
+          width: 18,
+          height: 18,
         },
       };
     });
@@ -113,6 +114,26 @@ export default function EvidenceGraph({ graphData }) {
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm mb-6 overflow-hidden">
+      <style>{`
+        @keyframes pulseRedLine {
+          0%, 100% {
+            stroke: #ef4444;
+            stroke-width: 3.5px;
+            filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.9));
+            opacity: 1;
+          }
+          50% {
+            stroke: #991b1b;
+            stroke-width: 2px;
+            filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.3));
+            opacity: 0.3;
+          }
+        }
+        .red-error-edge path.react-flow__edge-path {
+          animation: pulseRedLine 1.1s infinite ease-in-out !important;
+          stroke: #ef4444 !important;
+        }
+      `}</style>
       
       <div className="flex flex-col gap-2 px-5 py-3 border-b border-slate-100 bg-white">
         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">

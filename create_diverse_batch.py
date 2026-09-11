@@ -2,41 +2,62 @@ import zipfile
 import os
 import shutil
 
-# Make sure all demo docs exist
-os.system("python generate_demo_docs.py")
-
 base_dir = "frontend/public"
 output_zip = "batch_demo.zip"
 
 bidders = {
-    "Acme_Innovations": [
-        ("work_order_3.pdf", "Work_Order_Large.pdf"), # 8.5 Cr
+    "Acme_Corp": [
+        ("ca_turnover_acme.pdf", "CA_Turnover.pdf"),
         ("epfo_demo.pdf", "EPFO_Statement.pdf"),
-        ("ca_turnover.pdf", "CA_Turnover.pdf"),
-        ("technical_catalog.pdf", "Technical_Spec.pdf")
-    ],
-    "Delta_Solutions": [
-        ("work_order_1.pdf", "Work_Order_Small.pdf"), # 2.1 Cr
         ("esic_demo.pdf", "ESIC_Statement.pdf"),
-        ("nsic_demo.pdf", "NSIC_Certificate.pdf")
+        ("startup_india_demo.pdf", "Startup_India.pdf"),
+        ("nsic_demo.pdf", "NSIC_Certificate.pdf"),
+        ("work_order_1.pdf", "Work_Order_1.pdf"),
+        ("work_order_2.pdf", "Work_Order_2.pdf"),
+        ("work_order_3.pdf", "Work_Order_3.pdf"),
+        ("work_order_unsigned.pdf", "Work_Order_Unsigned.pdf"),
+        ("gst_demo.pdf", "GST_Certificate.pdf"),
+        ("udyam_demo.pdf", "Udyam_Certificate.pdf"),
+        ("gstr3b_demo.pdf", "GSTR3B_Statement.pdf"),
+        ("debarment_demo.pdf", "Debarment_Notice.pdf"),
+        ("tender_demo.pdf", "Tender_Document.pdf")
     ],
-    "Echo_Enterprises": [
-        ("startup_india_demo.pdf", "Startup_India.pdf"), # Revoked
-        ("work_order_2.pdf", "Work_Order_Mid.pdf") # 4.5 Cr
+    "Beta_LLC": [
+        ("ca_turnover_beta.pdf", "CA_Turnover.pdf"),
+        ("epfo_demo.pdf", "EPFO_Statement.pdf"),
+        ("esic_demo.pdf", "ESIC_Statement.pdf"),
+        ("startup_india_demo.pdf", "Startup_India.pdf"),
+        ("nsic_demo.pdf", "NSIC_Certificate.pdf"),
+        ("work_order_1.pdf", "Work_Order_1.pdf"),
+        ("work_order_2.pdf", "Work_Order_2.pdf"),
+        ("work_order_3.pdf", "Work_Order_3.pdf"),
+        ("work_order_unsigned.pdf", "Work_Order_Unsigned.pdf"),
+        ("gst_demo.pdf", "GST_Certificate.pdf"),
+        ("udyam_demo.pdf", "Udyam_Certificate.pdf"),
+        ("gstr3b_demo.pdf", "GSTR3B_Statement.pdf"),
+        ("debarment_demo.pdf", "Debarment_Notice.pdf"),
+        ("tender_demo.pdf", "Tender_Document.pdf")
     ],
-    "Foxtrot_Systems": [
-        ("epfo_demo.pdf", "EPFO.pdf"),
-        ("work_order_1.pdf", "PO_1.pdf"),
-        ("work_order_2.pdf", "PO_2.pdf") # 2.1 + 4.5 = 6.6 Cr
-    ],
-    "Theta_Logistics": [
-        ("ca_turnover.pdf", "Turnover.pdf")
+    "Gamma_Technologies": [
+        ("ca_turnover_gamma.pdf", "CA_Turnover.pdf"),
+        ("epfo_demo.pdf", "EPFO_Statement.pdf"),
+        ("esic_demo.pdf", "ESIC_Statement.pdf"),
+        ("startup_india_demo.pdf", "Startup_India.pdf"),
+        ("nsic_demo.pdf", "NSIC_Certificate.pdf"),
+        ("work_order_1.pdf", "Work_Order_1.pdf"),
+        ("work_order_2.pdf", "Work_Order_2.pdf"),
+        ("work_order_3.pdf", "Work_Order_3.pdf"),
+        ("work_order_unsigned.pdf", "Work_Order_Unsigned.pdf"),
+        ("gst_demo.pdf", "GST_Certificate.pdf"),
+        ("udyam_demo.pdf", "Udyam_Certificate.pdf"),
+        ("gstr3b_demo.pdf", "GSTR3B_Statement.pdf"),
+        ("debarment_demo.pdf", "Debarment_Notice.pdf"),
+        ("tender_demo.pdf", "Tender_Document.pdf")
     ]
 }
 
 with zipfile.ZipFile(output_zip, 'w') as zf:
     for bidder, files in bidders.items():
-        # Just create the folder entry implicitly by adding files
         for src, dst in files:
             src_path = os.path.join(base_dir, src)
             if os.path.exists(src_path):
@@ -45,3 +66,16 @@ with zipfile.ZipFile(output_zip, 'w') as zf:
                 print(f"Missing {src_path}")
 
 print("Created diverse batch_demo.zip")
+
+targets = [
+    r"C:\Users\Suhaas\OneDrive\Desktop\batch_demo.zip",
+    r"C:\Users\Suhaas\Desktop\batch_demo.zip",
+    r"C:\Users\Suhaas\Downloads\batch_demo.zip"
+]
+for t in targets:
+    try:
+        os.makedirs(os.path.dirname(t), exist_ok=True)
+        shutil.copyfile(output_zip, t)
+        print(f"Copied batch_demo.zip to {t}")
+    except Exception as e:
+        pass

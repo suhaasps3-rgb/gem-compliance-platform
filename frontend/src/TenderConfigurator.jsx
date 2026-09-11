@@ -60,10 +60,6 @@ export default function TenderConfigurator() {
               <p className="text-sm text-slate-600 mb-4">
                 Upload an English-language Tender PDF. The AI engine will extract eligibility criteria
                 and translate them into deterministic rules for the Bidder Verification Dashboard.
-                <br />
-                <span className="text-orange-600 font-medium">
-                  🇮🇳 For regional language tenders, use the "Bhashini Translate" button in the PDF viewer Tender tab.
-                </span>
               </p>
 
               <div className="flex items-center gap-3 mb-6">

@@ -6,6 +6,7 @@ import GovDocPanel from './GovDocPanel';
 import ComplianceScorecard from './components/ComplianceScorecard';
 import ExperiencePanel from './components/ExperiencePanel';
 import TechnicalMatrix from './components/TechnicalMatrix';
+import TurnoverVerificationCard from './components/TurnoverVerificationCard';
 
 import { useDashboardStore } from './store/dashboardStore';
 
@@ -15,6 +16,8 @@ export default function Dashboard({ bidderId }) {
   const clearVerifiedDocResult = useDashboardStore(s => s.clearVerifiedDocResult);
   const clearAllDocs = useDashboardStore(s => s.clearAllDocs);
   const visualAuthResult = useDashboardStore(s => s.visualAuthResult);
+  const turnoverParseResult = useDashboardStore(s => s.turnoverParseResult);
+  const complianceBlockedReason = useDashboardStore(s => s.complianceBlockedReason);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,6 +38,15 @@ export default function Dashboard({ bidderId }) {
         if (!res.ok) throw new Error("Failed to fetch dashboard data");
         const json = await res.json();
         setData(json);
+        if (json.experience_result) {
+          useDashboardStore.getState().setExperienceResult(json.experience_result);
+        }
+        if (json.technical_matrix_result) {
+          useDashboardStore.getState().setTechnicalMatrixResult(json.technical_matrix_result);
+        }
+        if (json.turnover_result) {
+          useDashboardStore.getState().setTurnoverParseResult(json.turnover_result);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -43,6 +55,20 @@ export default function Dashboard({ bidderId }) {
     }
     fetchData();
   }, [bidderId, tenderRules, verifiedDocResult]);
+
+  // Detect document identity mismatch (e.g. Bidder A doc uploaded on Bidder B dashboard)
+  useEffect(() => {
+    const bidderName = (data?.bidder_details?.name || '').toLowerCase().replace(/\s+private\s+limited|pvt\.?\s*ltd\.?|\s+llc|\s+limited/gi, '').trim();
+    const docCompany = (turnoverParseResult?.extracted?.company_name || '').toLowerCase().replace(/\s+private\s+limited|pvt\.?\s*ltd\.?|\s+llc|\s+limited/gi, '').trim();
+    const isFromApi = turnoverParseResult?.source === 'MOCK_DATASET';
+    if (!isFromApi && docCompany && bidderName && !docCompany.includes(bidderName) && !bidderName.includes(docCompany)) {
+      useDashboardStore.getState().setComplianceBlockedReason(
+        `IDENTITY MISMATCH: Uploaded document belongs to "${turnoverParseResult?.extracted?.company_name}" but this dashboard is for "${data?.bidder_details?.name}". Possible document substitution / forgery attempt.`
+      );
+    } else {
+      useDashboardStore.getState().clearComplianceBlock();
+    }
+  }, [turnoverParseResult, data]);
 
   // If a bidder PDF was uploaded, use that result instead of the dropdown data
   const displayData = verifiedDocResult || data;
@@ -91,6 +117,41 @@ export default function Dashboard({ bidderId }) {
         </div>
       )}
 
+      {/* Visual Authenticity Failure Alert Banner */}
+      {isVisualAuthFailed && (
+        <div className="bg-red-50 border-2 border-red-500 p-5 mb-6 rounded-lg shadow-md flex items-start gap-4 animate-pulse">
+          <div className="text-red-600 mt-1">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-red-900 font-extrabold text-lg">CRITICAL COMPLIANCE FAILURE: Missing Signature / Rubber Stamp</h3>
+              <span className="text-xs bg-red-600 text-white font-bold px-2.5 py-0.5 rounded-full">PENALTY: -50 PTS</span>
+            </div>
+            <p className="text-red-800 text-sm mt-1 font-medium">
+              The uploaded document failed the Visual Authenticity check. No authorized ink signature, digital signature certificate (DSC token), or official rubber stamp was detected in the execution block. The Overall Compliance Score has been penalized by 50 points and flagged for mandatory officer investigation.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Document Identity Mismatch / Score Blocked Banner */}
+      {complianceBlockedReason && (
+        <div className="bg-red-900 border-2 border-red-700 p-5 mb-6 rounded-lg shadow-xl flex items-start gap-4">
+          <div className="text-red-300 mt-1 shrink-0">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <h3 className="text-white font-extrabold text-xl tracking-wide">⛔ COMPLIANCE SCORE BLOCKED</h3>
+              <span className="text-xs bg-yellow-400 text-red-900 font-black px-3 py-1 rounded-full animate-pulse">FORGERY ALERT</span>
+            </div>
+            <p className="text-red-200 text-sm font-semibold mt-1">{complianceBlockedReason}</p>
+            <p className="text-red-300 text-xs mt-2">SATARK has detected a potential document substitution attempt. The compliance score cannot be computed until an authentic document matching this bidder's identity is submitted. This event has been logged for audit.</p>
+          </div>
+        </div>
+      )}
+
       {/* Top Header Panel */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 p-6">
         <div className="flex justify-between items-center mb-6">
@@ -99,10 +160,10 @@ export default function Dashboard({ bidderId }) {
             <p className="text-slate-500 text-sm mt-1">Target: {displayBidderId}</p>
           </div>
           <div className={`px-4 py-2 rounded-full font-bold text-sm tracking-wide ${
-            displayData?.overall_status === 'VERIFIED_COMPLIANT' ? 'bg-emerald-100 text-emerald-800' :
-            'bg-red-600 text-white shadow-lg'
+            isVisualAuthFailed || displayData?.overall_status !== 'VERIFIED_COMPLIANT' ? 'bg-red-600 text-white shadow-lg' :
+            'bg-emerald-100 text-emerald-800'
           }`}>
-            STATUS: {displayData?.overall_status === 'NON_COMPLIANT' ? 'RED — Mandatory Officer Review / Non-Compliant Evidence' : (displayData?.overall_status?.replace(/_/g, ' ') || 'UNKNOWN')}
+            STATUS: {isVisualAuthFailed ? 'CRITICAL — MISSING SIGNATURE / STAMP' : (displayData?.overall_status === 'NON_COMPLIANT' ? 'RED — Mandatory Officer Review / Non-Compliant Evidence' : (displayData?.overall_status?.replace(/_/g, ' ') || 'UNKNOWN'))}
           </div>
         </div>
 
@@ -159,6 +220,22 @@ export default function Dashboard({ bidderId }) {
                 </div>
               ))}
 
+              {visualAuthResult && (
+                <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100 text-sm">
+                  <span className="text-slate-700 font-semibold">Signature &amp; Stamp Authenticity</span>
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider flex items-center gap-1 ${
+                      visualAuthResult.is_signed_and_stamped ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                      'bg-red-100 text-red-700 border border-red-200'
+                    }`}>
+                      {visualAuthResult.is_signed_and_stamped ? (
+                        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg> VERIFIED</>
+                      ) : (
+                        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg> FAILED (UNSIGNED)</>
+                      )}
+                  </span>
+                </div>
+              )}
+
               {/* Dynamically Extracted Rules */}
               {tenderRules?.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-slate-200">
@@ -205,22 +282,10 @@ export default function Dashboard({ bidderId }) {
           </div>
         </div>
         </div>
-
-        {visualAuthResult && !visualAuthResult.is_signed_and_stamped && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded shadow-sm flex items-start gap-4 animate-pulse">
-            <div className="text-red-500 mt-1">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            </div>
-            <div>
-              <h3 className="text-red-800 font-bold">CRITICAL COMPLIANCE FAILURE: Missing Signature/Stamp</h3>
-              <p className="text-red-700 text-sm mt-1">
-                The uploaded document failed the Visual Authenticity check. No authorized ink signature or digital stamp was detected in the statutory declaration bounding box. The Overall Compliance Score has been penalized by 50 points.
-              </p>
-            </div>
-          </div>
-        )}
-
         <ComplianceScorecard displayData={displayData} bidderDetails={displayData?.bidder_details} />
+
+      {/* ── CA Turnover Verification Card (shown after upload) ── */}
+      <TurnoverVerificationCard />
 
       {/* Missing Mandatory Documents Section */}
       {displayData?.ai_recommendation?.missing_docs?.length > 0 && (

@@ -1,17 +1,14 @@
 import re
-
-with open(r'backend\document_parsers.py', 'r', encoding='utf-8') as f:
+with open('backend/main.py', 'r', encoding='utf-8') as f:
     content = f.read()
 
-content = content.replace(
-    r"[A-Z][A-Za-z\s&\.]+(?:Ltd|Limited|Corporation|Corp|Industries|ONGC|HPCL|BPCL|CPCL|Reliance|Tata)",
-    r"[A-Z][A-Za-z \t&\.]+(?:Ltd|Limited|Corporation|Corp|Industries|ONGC|HPCL|BPCL|CPCL|Reliance|Tata)"
-)
+old_regex = r"m = _re.search(r'M/s\.?\s*([A-Z][A-Za-z\s]+)(?=,)', text)"
+new_regex = r"m = _re.search(r'(?:M/s\.?\s*|Entity:\s*)([A-Za-z0-9\s]+?)(?:,|\n|Supplier|$)', text, _re.IGNORECASE)"
 
-content = content.replace(
-    r"[A-Z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|Private|LLP|Services)?",
-    r"[A-Z][A-Za-z \t&\.]+(?:Ltd|Limited|Pvt|Private|LLP|Services)?"
-)
-
-with open(r'backend\document_parsers.py', 'w', encoding='utf-8') as f:
-    f.write(content)
+if old_regex in content:
+    content = content.replace(old_regex, new_regex)
+    with open('backend/main.py', 'w', encoding='utf-8') as f:
+        f.write(content)
+    print('Patched regex.')
+else:
+    print('Could not find old regex.')

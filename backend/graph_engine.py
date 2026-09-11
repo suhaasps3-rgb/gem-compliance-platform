@@ -160,6 +160,9 @@ class EvidenceGraphEngine:
                 "evidence": f"Tender Rule 4: Must be >= {mii_limit}%",
                 "ai_synthesis": f"Bidder claims only {claimed_local_content}% local content against the strict {mii_limit}% mandate extracted from the tender document."
             })
+            claim_node = f"Claim:LocalContent:{claimed_local_content}"
+            self.graph.add_node("Evidence:TenderMII", type="Evidence", source="Tender MII Rule 🔴")
+            self.graph.add_edge(claim_node, "Evidence:TenderMII", relation="RULE_BREACH", color="red")
             
         # Sub-contracting limit (<= subcontract_limit%)
         if claimed_subcontracting is not None and claimed_subcontracting > subcontract_limit:
@@ -170,6 +173,24 @@ class EvidenceGraphEngine:
                 "evidence": f"Tender Rule 5: Capped at {subcontract_limit}%",
                 "ai_synthesis": f"Bidder's technical proposal declares {claimed_subcontracting}% sub-contracting, violating the strict {subcontract_limit}% limit enforced by the Procurement Officer's tender document."
             })
+            claim_node = f"Claim:Subcontracting:{claimed_subcontracting}"
+            self.graph.add_node("Evidence:TenderSubcontract", type="Evidence", source="Tender Subcontract Cap 🔴")
+            self.graph.add_edge(claim_node, "Evidence:TenderSubcontract", relation="RULE_BREACH", color="red")
+
+        # Turnover Tender Cap Breach (e.g. Beta LLC 18 Cr > 15 Cr cap)
+        msme_limit = config.active_tender_limits.get("msme", 15)
+        if "turnover_cr" in claims and claims["turnover_cr"] > msme_limit:
+            claimed_turnover = claims["turnover_cr"]
+            status = "NEEDS_REVIEW"
+            self.contradictions.append({
+                "contradiction_id": f"conflict-msme-cap-{self.bidder['id']}",
+                "claim": f"Annual Turnover: ₹{claimed_turnover} Cr",
+                "evidence": f"Tender MSME Cap: Maximum ₹{msme_limit} Cr allowed",
+                "ai_synthesis": f"MSME Eligibility Breach: Bidder's declared turnover of ₹{claimed_turnover} Cr exceeds the tender-specified MSME cap of ₹{msme_limit} Cr, indicating the entity may not qualify under MSME reservation."
+            })
+            claim_node = f"Claim:Turnover:{claimed_turnover}"
+            self.graph.add_node("Evidence:TenderMSME", type="Evidence", source=f"Tender Cap (<={msme_limit} Cr) 🔴")
+            self.graph.add_edge(claim_node, "Evidence:TenderMSME", relation="EXCEEDS_CAP", color="red")
 
         # GST Fiscal Compliance
         if gstn and not gstn.get("gstr_filed_continuous_12m", True):
@@ -187,6 +208,9 @@ class EvidenceGraphEngine:
         if debarment_check.get("is_debarred_currently", False):
             self.hard_filters["debarment_status"] = "FAIL"
             status = "NEEDS_REVIEW"
+            pan = claims.get("pan", "UNKNOWN")
+            self.graph.add_node("Evidence:DebarmentRegistry", type="Evidence", source="MoF Debarment Registry 🔴")
+            self.graph.add_edge(f"Anchor:PAN:{pan}", "Evidence:DebarmentRegistry", relation="DEBARRED_ENTITY", color="red")
             
         gstn_check = self.bidder.get("gstn_mock", {})
         if gstn_check and not gstn_check.get("status", "ACTIVE") == "ACTIVE":

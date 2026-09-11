@@ -8,8 +8,8 @@
       "expected_status": "VERIFIED_COMPLIANT",
       "claims": {
         "is_msme": true,
-        "turnover_cr": 4.5,
-        "local_content_pct": 80,
+        "turnover_cr": 12.0,
+        "local_content_pct": 70,
         "pan": "ACME1234Q",
         "submitted_docs": [
           "GST_Certificate",
@@ -17,10 +17,11 @@
           "Turnover_Certificate",
           "OEM_Authorization",
           "Local_Content_Declaration"
-        ]
+        ],
+        "subcontracting_pct": 5
       },
       "mca21_mock": {
-        "reported_turnover_cr": 4.5,
+        "reported_turnover_cr": 12.0,
         "active_directors": [
           "DIN99991111"
         ]
@@ -102,6 +103,12 @@
         "reasoning": "All extracted claims match statutory registry evidence perfectly. AI confirms Udyam, ITR, and MCA21 data reconcile.",
         "red_flags": [],
         "missing_docs": []
+      },
+      "gstn_mock": {
+        "gstr_filed_continuous_12m": true
+      },
+      "vigilance_mock": {
+        "is_debarred_currently": false
       }
     },
     {
@@ -115,11 +122,16 @@
           "GST_Certificate",
           "PAN_Card",
           "Turnover_Certificate",
-          "OEM_Authorization",
-          "Local_Content_Declaration"
-        ]
+          "Local_Content_Declaration",
+          "Udyam_Certificate"
+        ],
+        "turnover_cr": 18.0,
+        "subcontracting_pct": 15,
+        "local_content_pct": 65
       },
-      "mca21_mock": {},
+      "mca21_mock": {
+        "reported_turnover_cr": 18.0
+      },
       "udyam_mock": {},
       "gst_mock": {
         "return_filing_status": "FILED"
@@ -133,20 +145,37 @@
       },
       "ai_recommendation": {
         "decision": "NEEDS REVIEW",
-        "reasoning": "Bidder claimed Make-in-India Class-I exemption, but the uploaded MII document does not specify the local content percentage.",
+        "missing_docs": [],
+        "reasoning": "Turnover of INR 18.0 Cr exceeds the MSME eligibility cap of INR 15 Cr. Additionally, sub-contracting percentage of 15% breaches the 10% tender cap. Requires clarification.",
         "red_flags": [
-          "MII Declaration missing explicit Local Content %"
-        ],
-        "missing_docs": [
-          "Local_Content_Declaration"
+          "Turnover 18.0 Cr exceeds MSME cap (15 Cr)",
+          "Sub-contracting 15% exceeds tender cap (10%)"
         ]
       },
-      "active_contradictions": [
+      "work_orders": [
         {
-          "source": "MII_Declaration",
-          "issue": "Missing Local Content %"
+          "wo_number": "WO-2011",
+          "client": "Indian Oil Corp",
+          "value_cr": 3.8,
+          "order_date": "12/05/2023",
+          "fy": "2023-24",
+          "confidence": 0.92
+        },
+        {
+          "wo_number": "WO-2012",
+          "client": "BPCL",
+          "value_cr": 2.7,
+          "order_date": "18/11/2024",
+          "fy": "2024-25",
+          "confidence": 0.9
         }
-      ]
+      ],
+      "technical_specs": {
+        "Pump Capacity": 550,
+        "Pressure": 25,
+        "Efficiency": 89,
+        "Voltage": 415
+      }
     },
     {
       "id": "bidder-gamma-003",
@@ -162,7 +191,10 @@
           "Turnover_Certificate",
           "OEM_Authorization",
           "Local_Content_Declaration"
-        ]
+        ],
+        "turnover_cr": 10.0,
+        "subcontracting_pct": 5,
+        "local_content_pct": 40
       },
       "mca21_mock": {
         "legal_name": "Gamma Technologies Pvt Ltd"
@@ -199,24 +231,39 @@
         "missing_docs": []
       },
       "debarment_mock": {
-        "historical_records": [
-          {
-            "start_date": "2023-01-01",
-            "end_date": "2026-01-01",
-            "reason": "Fraudulent Bid"
-          }
-        ]
+        "is_debarred_currently": true
       },
-      "active_contradictions": [
+      "gstn_mock": {
+        "gstr_filed_continuous_12m": false,
+        "months_missed": 4
+      },
+      "vigilance_mock": {
+        "is_debarred_currently": true
+      },
+      "work_orders": [
         {
-          "source": "Identity",
-          "issue": "PAN Mismatch (Forgery)"
+          "wo_number": "WO-3001",
+          "client": "GAIL India",
+          "value_cr": 1.8,
+          "order_date": "10/01/2023",
+          "fy": "2022-23",
+          "confidence": 0.85
         },
         {
-          "source": "Debarment",
-          "issue": "Active Debarment Found"
+          "wo_number": "WO-3002",
+          "client": "NTPC Ltd",
+          "value_cr": 1.5,
+          "order_date": "05/08/2022",
+          "fy": "2022-23",
+          "confidence": 0.8
         }
-      ]
+      ],
+      "technical_specs": {
+        "Pump Capacity": 450,
+        "Pressure": 18,
+        "Efficiency": 82,
+        "Voltage": 415
+      }
     },
     {
       "id": "bidder-delta-004",
@@ -270,6 +317,30 @@
       },
       "debarment_mock": {
         "is_debarred_currently": true
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-4001",
+          "client": "BHEL",
+          "value_cr": 2.8,
+          "order_date": "14/02/2023",
+          "fy": "2022-23",
+          "confidence": 0.91
+        },
+        {
+          "wo_number": "WO-4002",
+          "client": "BEL",
+          "value_cr": 2.6,
+          "order_date": "20/06/2024",
+          "fy": "2024-25",
+          "confidence": 0.89
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 510,
+        "Pressure": 21,
+        "Efficiency": 88,
+        "Voltage": 415
       }
     },
     {
@@ -305,6 +376,30 @@
       },
       "gst_mock": {
         "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-5001",
+          "client": "HAL",
+          "value_cr": 3.1,
+          "order_date": "11/03/2023",
+          "fy": "2022-23",
+          "confidence": 0.93
+        },
+        {
+          "wo_number": "WO-5002",
+          "client": "NALCO",
+          "value_cr": 2.5,
+          "order_date": "09/09/2024",
+          "fy": "2024-25",
+          "confidence": 0.87
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 530,
+        "Pressure": 23,
+        "Efficiency": 90,
+        "Voltage": 415
       }
     },
     {
@@ -340,6 +435,22 @@
       },
       "gst_mock": {
         "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-6001",
+          "client": "DRDO",
+          "value_cr": 1.2,
+          "order_date": "01/01/2024",
+          "fy": "2023-24",
+          "confidence": 0.85
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 420,
+        "Pressure": 16,
+        "Efficiency": 80,
+        "Voltage": 415
       }
     },
     {
@@ -377,6 +488,30 @@
       },
       "gst_mock": {
         "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-7001",
+          "client": "Coal India",
+          "value_cr": 4.5,
+          "order_date": "05/05/2023",
+          "fy": "2023-24",
+          "confidence": 0.95
+        },
+        {
+          "wo_number": "WO-7002",
+          "client": "NMDC",
+          "value_cr": 1.5,
+          "order_date": "12/12/2024",
+          "fy": "2024-25",
+          "confidence": 0.9
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 505,
+        "Pressure": 20,
+        "Efficiency": 86,
+        "Voltage": 415
       }
     },
     {
@@ -431,6 +566,30 @@
       },
       "gst_mock": {
         "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-8001",
+          "client": "ISRO",
+          "value_cr": 2.5,
+          "order_date": "10/10/2023",
+          "fy": "2023-24",
+          "confidence": 0.92
+        },
+        {
+          "wo_number": "WO-8002",
+          "client": "L&T",
+          "value_cr": 3.0,
+          "order_date": "15/01/2025",
+          "fy": "2024-25",
+          "confidence": 0.9
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 515,
+        "Pressure": 21,
+        "Efficiency": 87,
+        "Voltage": 415
       }
     },
     {
@@ -643,6 +802,30 @@
       "itr_mock": {
         "status": "FILED",
         "last_filed_year": "2025"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-1101",
+          "client": "SAIL",
+          "value_cr": 4.2,
+          "order_date": "18/08/2023",
+          "fy": "2023-24",
+          "confidence": 0.94
+        },
+        {
+          "wo_number": "WO-1102",
+          "client": "RITES",
+          "value_cr": 1.8,
+          "order_date": "22/02/2024",
+          "fy": "2023-24",
+          "confidence": 0.88
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 525,
+        "Pressure": 22,
+        "Efficiency": 89,
+        "Voltage": 415
       }
     },
     {
@@ -703,7 +886,17 @@
       "itr_mock": {
         "status": "FILED",
         "last_filed_year": "2025"
-      }
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-1201",
+          "client": "Mazagon Dock",
+          "value_cr": 2.0,
+          "order_date": "12/04/2023",
+          "fy": "2023-24",
+          "confidence": 0.85
+        }
+      ]
     }
   ]
 }

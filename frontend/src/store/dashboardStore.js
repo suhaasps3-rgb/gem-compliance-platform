@@ -93,5 +93,10 @@ export const useDashboardStore = create((set) => ({
   visualAuthResult: null,
   setVisualAuthResult: (res) => set({ visualAuthResult: res }),
   batchModeActive: false,
-  setBatchModeActive: (active) => set({ batchModeActive: active })
+  setBatchModeActive: (active) => set({ batchModeActive: active }),
+
+  // Compliance score block (e.g. wrong document uploaded for this bidder)
+  complianceBlockedReason: null,
+  setComplianceBlockedReason: (reason) => set({ complianceBlockedReason: reason }),
+  clearComplianceBlock: () => set({ complianceBlockedReason: null }),
 }));

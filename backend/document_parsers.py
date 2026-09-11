@@ -262,12 +262,12 @@ def parse_work_order(pdf_bytes: bytes) -> dict:
         result["extracted"]["vendor"] = m.group(1).strip()
 
     # Work Order Number
-    m = re.search(r'(?:Work Order No|WO No|PO No|Order No|Reference No)[:\s.]*([A-Z0-9/\-]+)', text, re.IGNORECASE)
+    m = re.search(r'(?:Work Order No|WO No|PO No|Order No|Reference No|PO Ref\. No\.|PURCHASE ORDER No|CONTRACT AGREEMENT Ref|PURCHASE ORDER Ref)[:\s]*([A-Z0-9/\-]+)', text, re.IGNORECASE)
     if m:
         result["extracted"]["wo_number"] = m.group(1).strip()
 
     # Order Date
-    m = re.search(r'(?:Order Date|Date of Order|Dated|Issue Date)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{4}|\d{1,2}\s+[A-Za-z]+\s+\d{4})', text, re.IGNORECASE)
+    m = re.search(r'(?:Order Date|Date of Order|Dated|Issue Date|Date)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{4}|\d{1,2}[/-][A-Za-z]+[/-]\d{4}|\d{1,2}\s+[A-Za-z]+\s+\d{4})', text, re.IGNORECASE)
     if m:
         result["extracted"]["order_date"] = m.group(1).strip()
 
@@ -278,33 +278,18 @@ def parse_work_order(pdf_bytes: bytes) -> dict:
 
     # Order Value — look for ₹ or Rs. followed by number
     value_found = False
-    # Try crore pattern first
-    m = re.search(r'(?:Order Value|Contract Value|PO Value|Amount|Total)[^\d]*(?:Rs\.?|INR|₹)[\s\.]*(\d[\d,\.]+)\s*(?:Crore|Cr\.?|crores?)', text, re.IGNORECASE)
+    m = re.search(r'(?:Order Value|Contract Value|PO Value|Amount|Total)[^\n\r]*[\n\r\s]*(?:Rs\.?|INR|₹)[\s\.]*(\d[\d,]+)', text, re.IGNORECASE)
     if m:
-        raw = m.group(1).replace(',', '')
-        result["extracted"]["order_value_cr"] = float(raw)
-        result["extracted"]["currency"] = "INR"
-        value_found = True
-    else:
-        # Try lakh pattern
-        m = re.search(r'(?:Order Value|Contract Value|PO Value|Amount|Total)[^\d]*(?:Rs\.?|INR|₹)[\s\.]*(\d[\d,\.]+)\s*(?:Lakh|Lakhs?|L\.)', text, re.IGNORECASE)
-        if m:
-            raw = float(m.group(1).replace(',', ''))
-            result["extracted"]["order_value_cr"] = round(raw / 100, 4)  # convert lakh to crore
+        try:
+            val_num = float(m.group(1).replace(',', ''))
+            if val_num > 100000:
+                result["extracted"]["order_value_cr"] = round(val_num / 10000000, 2)
+            else:
+                result["extracted"]["order_value_cr"] = val_num
             result["extracted"]["currency"] = "INR"
             value_found = True
-        else:
-            # Try plain number pattern
-            m = re.search(r'(?:Order Value|Contract Value|Total Amount)[^\n]*?(?:Rs\.?|₹)\s*(\d[\d,\.]+)', text, re.IGNORECASE)
-            if m:
-                raw = float(m.group(1).replace(',', ''))
-                # Assume in rupees if very large number
-                if raw > 100000:
-                    result["extracted"]["order_value_cr"] = round(raw / 10000000, 4)
-                else:
-                    result["extracted"]["order_value_cr"] = raw
-                result["extracted"]["currency"] = "INR"
-                value_found = True
+        except ValueError:
+            pass
 
     # Completion date
     m = re.search(r'(?:Completion Date|Delivery Date|Date of Completion|Completed on)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{4}|\d{1,2}\s+[A-Za-z]+\s+\d{4})', text, re.IGNORECASE)
@@ -344,38 +329,50 @@ def parse_turnover_ca(pdf_bytes: bytes) -> dict:
         "source": "PDF_PARSED"
     }
 
-    # Company Name — multiple patterns
-    m = re.search(r'(?:Company Name|Name of Company|Name of the Company|M/s)[:\s]+([A-Za-z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|LLP|Private|Corp|Corporation|Inc|Industries|Enterprises|Solutions|Technologies|Infra|Systems))', text, re.IGNORECASE)
+    # Company Name — PDF has "Name of Entity (Auditee)\nACME CORP PRIVATE LIMITED"
+    m = re.search(r'Name of Entity[^\n]*\n([A-Z][A-Z\s&]+(?:LIMITED|LLP|PRIVATE|CORP|CORPORATION|INC|INDUSTRIES|ENTERPRISES|SOLUTIONS|TECHNOLOGIES|SYSTEMS))', text, re.IGNORECASE)
     if not m:
-        # Fallback: "books of accounts of XXXX" or "certified that XXXX"
-        m = re.search(r'(?:books of accounts? of|certify that|certif(?:ied|y) the (?:financial )?details? (?:of|for)|on behalf of)\s+([A-Z][A-Za-z\s&\.]+?)(?:\.|,|\n|for the|Financial|FY)', text, re.IGNORECASE)
+        m = re.search(r'(?:Name of Company|Company Name|M/s)[:\s]+([A-Za-z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|LLP|Private|Corp|Corporation|Inc|Industries|Enterprises|Solutions|Technologies))', text, re.IGNORECASE)
+    if not m:
+        m = re.search(r'(?:books of accounts? of|certify that|on behalf of)\s+([A-Z][A-Za-z\s&\.]+?)(?:\.|,|\n|for the|Financial|FY)', text, re.IGNORECASE)
     if m:
         result["extracted"]["company_name"] = m.group(1).strip().rstrip('.')
 
-    # Financial Year
-    m = re.search(r'(?:Financial Year|FY|For the year)[:\s]*(\d{4}[–\-]\d{2,4})', text, re.IGNORECASE)
+    # Financial Year — matches "Financial Year 2024-25" anywhere (including inside parens)
+    m = re.search(r'Financial Year\s*([\d]{4}[-\u2013]\d{2,4})', text, re.IGNORECASE)
+    if not m:
+        m = re.search(r'\bFY\s*([\d]{4}[-\u2013]\d{2,4})', text)
     if m:
         result["extracted"]["financial_year"] = m.group(1).strip()
 
-    # Turnover — with currency prefix
-    m = re.search(r'(?:Annual Turnover|Turnover|Gross Revenue|Net Sales)[^\d]*(?:Rs\.?|INR|₹)[\s\.]*(\d[\d,\.]+)\s*(?:Crore|Cr\.?)', text, re.IGNORECASE)
+    # Turnover — PDF has "Annual Turnover (FY 2024-25)\nINR 12,00,00,000/- (Rupees Twelve Crore Only)"
+    m = re.search(r'Annual Turnover[^\n]*\n(?:INR|Rs\.?)\s*([\d,]+)\s*/-', text, re.IGNORECASE)
     if m:
-        result["extracted"]["turnover_cr"] = float(m.group(1).replace(',', ''))
+        raw = int(m.group(1).replace(',', ''))
+        result["extracted"]["turnover_cr"] = round(raw / 1_00_00_000, 2)
     else:
-        # Without currency prefix: "5.2 Crore" directly after FY line
-        m = re.search(r'(?:Annual Turnover|Turnover|FY\s*\d{4}[–\-]\d{2,4})[:\s]*(?:Rs\.?|INR|₹)?\s*(\d[\d,\.]+)\s*(?:Crore|Cr\.?)', text, re.IGNORECASE)
+        # Fallback: "INR X.XX Crore" on same line
+        m = re.search(r'(?:Annual Turnover|Turnover|Gross Revenue|Net Sales)[^\d]*(?:Rs\.?|INR|₹)[\s\.]*([\d][\d,\.]+)\s*(?:Crore|Cr\.?)', text, re.IGNORECASE)
         if m:
             result["extracted"]["turnover_cr"] = float(m.group(1).replace(',', ''))
         else:
-            # Try lakh
-            m = re.search(r'(?:Annual Turnover|Turnover)[^\d]*(?:Rs\.?|₹)[\s\.]*(\d[\d,\.]+)\s*(?:Lakh|L)', text, re.IGNORECASE)
+            # Fallback: "X.XX Crore" without currency prefix
+            m = re.search(r'(?:Annual Turnover|Turnover)[:\s]*(?:Rs\.?|INR|₹)?\s*([\d][\d,\.]+)\s*(?:Crore|Cr\.?)', text, re.IGNORECASE)
             if m:
-                result["extracted"]["turnover_cr"] = round(float(m.group(1).replace(',', '')) / 100, 4)
+                result["extracted"]["turnover_cr"] = float(m.group(1).replace(',', ''))
+            else:
+                # Lakh fallback
+                m = re.search(r'(?:Annual Turnover|Turnover)[^\d]*(?:Rs\.?|₹)[\s\.]*([\d][\d,\.]+)\s*(?:Lakh|L)\b', text, re.IGNORECASE)
+                if m:
+                    result["extracted"]["turnover_cr"] = round(float(m.group(1).replace(',', '')) / 100, 4)
 
-    # CA Name
-    m = re.search(r'(?:CA|Chartered Accountant|Name of CA)[:\s]+([A-Z][A-Za-z\s\.]+?)(?=\n|MRN|Membership|UDIN)', text, re.IGNORECASE)
+    # CA Name — PDF has "For CA Ramesh Kumar Iyer & Associates"
+    m = re.search(r'For\s+(CA\s+[A-Z][A-Za-z\s\.]+?)(?:\s*&|\n|Place)', text, re.IGNORECASE)
+    if not m:
+        m = re.search(r'(?:CA|Chartered Accountant|Name of CA)[:\s]+([A-Z][A-Za-z\s\.]+?)(?=\n|MRN|Membership|UDIN)', text, re.IGNORECASE)
     if m:
         result["extracted"]["ca_name"] = m.group(1).strip()
+
 
     # Membership Number
     m = re.search(r'(?:Membership No|MRN|M\.No)[:\s.]*([0-9]{6})', text, re.IGNORECASE)

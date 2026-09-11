@@ -17,7 +17,8 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
     verifiedDocResult, 
     experienceResult, 
     technicalMatrixResult,
-    visualAuthResult
+    visualAuthResult,
+    complianceBlockedReason
   } = useDashboardStore();
 
   // ── Forgery Mismatch Detection ──
@@ -127,15 +128,28 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
         <h2 className="text-xl font-bold text-gray-800 mb-1">Overall Compliance Score</h2>
         <p className="text-sm text-gray-500">Aggregated from document verifications, graphs, and technical parameters</p>
       </div>
-      <div className="flex items-center gap-6 mt-4 md:mt-0">
-        <div className="flex flex-col items-center">
-          <span className="text-4xl font-extrabold text-blue-600">{score}</span>
-          <span className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Out of 100</span>
+      {complianceBlockedReason ? (
+        <div className="flex items-center gap-4 mt-4 md:mt-0">
+          <div className="flex flex-col items-center">
+            <span className="text-5xl font-extrabold text-red-700">0</span>
+            <span className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Out of 100</span>
+          </div>
+          <div className="px-4 py-2 rounded-md border font-bold bg-red-900 text-white border-red-700 flex items-center gap-2 animate-pulse">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            ⛔ BLOCKED
+          </div>
         </div>
-        <div className={`px-4 py-2 rounded-md border font-bold ${riskColor}`}>
-          {riskLevel} RISK
+      ) : (
+        <div className="flex items-center gap-6 mt-4 md:mt-0">
+          <div className="flex flex-col items-center">
+            <span className="text-4xl font-extrabold text-blue-600">{score}</span>
+            <span className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Out of 100</span>
+          </div>
+          <div className={`px-4 py-2 rounded-md border font-bold ${riskColor}`}>
+            {riskLevel} RISK
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -234,6 +234,8 @@ def process_batch_background(batch_id: str, zip_bytes: bytes):
                 except Exception:
                     pass
 
+            tech_result = None
+
             # 2. Process each document in the folder
             for doc_name in bidder_entry.get("documents", []):
                 full_path = f"{folder_name}/{doc_name}"
@@ -291,13 +293,52 @@ def process_batch_background(batch_id: str, zip_bytes: bytes):
                                 visual_auth_result = auth
                         except Exception:
                             pass
+                    elif doc_type == "technical":
+                        try:
+                            from technical_eval import extract_specs_from_pdf, evaluate_technical_specs
+                            from main import STANDARD_TENDER_SPECS
+                            v_specs = extract_specs_from_pdf(doc_bytes)
+                            if v_specs:
+                                tech_result = evaluate_technical_specs(STANDARD_TENDER_SPECS, v_specs)
+                        except Exception:
+                            pass
                 except Exception:
                     pass
 
-            # 3. Experience validation
+            # 3. Experience & Technical validation
             exp_result = None
             if work_orders_parsed:
                 exp_result = validate_experience(work_orders_parsed, requirement_cr=5.0)
+            elif matched_bidder:
+                raw_wos = matched_bidder.get("work_orders", [])
+                if raw_wos:
+                    formatted_wos = []
+                    for wo in raw_wos:
+                        formatted_wos.append({
+                            "extracted": {
+                                "wo_number": wo.get("wo_number"),
+                                "client": wo.get("client"),
+                                "order_value_cr": wo.get("value_cr"),
+                                "order_date": wo.get("order_date"),
+                                "execution_status": "COMPLETED"
+                            },
+                            "verification": {
+                                "value_extracted": True,
+                                "extraction_confidence": wo.get("confidence", 0.9)
+                            }
+                        })
+                    exp_result = validate_experience(formatted_wos, requirement_cr=5.0, eligible_years=5)
+
+            if not tech_result and matched_bidder:
+                try:
+                    from main import STANDARD_TENDER_SPECS
+                    from technical_eval import evaluate_technical_specs
+                    raw_specs = matched_bidder.get("technical_specs", {})
+                    if raw_specs:
+                        vendor_specs_list = [{"parameter": k, "vendor_value": v} for k, v in raw_specs.items()]
+                        tech_result = evaluate_technical_specs(STANDARD_TENDER_SPECS, vendor_specs_list)
+                except Exception:
+                    pass
 
             # 4. Calculate Unified Compliance Score (matching Dashboard 1:1)
             score, risk = _compute_compliance_score(
@@ -309,6 +350,7 @@ def process_batch_background(batch_id: str, zip_bytes: bytes):
                 esic_result=esic_result,
                 startup_result=startup_result,
                 experience_result=exp_result,
+                technical_result=tech_result,
                 visual_auth_result=visual_auth_result
             )
 
@@ -320,7 +362,8 @@ def process_batch_background(batch_id: str, zip_bytes: bytes):
                 "gst_result": gst_result,
                 "udyam_result": udyam_result,
                 "epfo_result": epfo_result,
-                "experience_result": exp_result
+                "experience_result": exp_result,
+                "technical_result": tech_result
             })
 
         except Exception as e:

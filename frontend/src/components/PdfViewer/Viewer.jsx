@@ -4,8 +4,8 @@ import { useDashboardStore } from '../../store/dashboardStore';
 
 const DOC_URLS = {
   tender: '/tender_demo.pdf',
-  gst:    '/gst_tender_demo.pdf',
-  udyam:  '/udyam_tender_demo.pdf',
+  gst:    '/gst_demo.pdf',
+  udyam:  '/udyam_demo.pdf',
   epfo: '/epfo_demo.pdf',
   esic: '/esic_demo.pdf',
   startup: '/startup_india_demo.pdf',
@@ -32,17 +32,9 @@ const UPLOAD_CONFIG = {
   itr: { endpoint: '/api/v1/bidders/parse-itr', field: 'itr_pdf' },
   mii: { endpoint: '/api/v1/bidders/parse-mii', field: 'mii_pdf' },
   gstr3b: { endpoint: '/api/v1/bidders/parse-gstr3b', field: 'gstr3b_pdf' },
-  debarment: { endpoint: '/api/v1/bidders/parse-debarment', field: 'debarment_pdf' }
+  debarment: { endpoint: '/api/v1/bidders/parse-debarment', field: 'debarment_pdf' },
+  technical: { endpoint: '/api/v1/bidders/parse-technical', field: 'tech_pdf' }
 };
-
-const LANG_OPTIONS = [
-  { code: 'te', label: 'Telugu' },
-  { code: 'ml', label: 'Malayalam' },
-  { code: 'hi', label: 'Hindi' },
-  { code: 'ta', label: 'Tamil' },
-  { code: 'kn', label: 'Kannada' },
-  { code: 'bn', label: 'Bengali' },
-];
 
 export default function Viewer() {
   const selectedDocument    = useDashboardStore((s) => s.selectedDocument);
@@ -60,12 +52,7 @@ export default function Viewer() {
   const [customPdfUrl, setCustomPdfUrl]   = React.useState(null);
   const [verifying, setVerifying]         = React.useState(false);
   const [verifyStatus, setVerifyStatus]   = React.useState(null);
-
-  // Bhashini state — only used on tender tab
-  const [showBhashini, setShowBhashini]   = React.useState(false);
-  const [bhLang, setBhLang]               = React.useState('te');
-  const [bhLoading, setBhLoading]         = React.useState(false);
-  const [bhResult, setBhResult]           = React.useState(null);
+  const visualAuthResult = useDashboardStore((s) => s.visualAuthResult);
 
   const getUploadLabel = () => {
     if (verifying) return 'Parsing...';
@@ -90,8 +77,6 @@ export default function Viewer() {
     setLoadError(false);
     setCustomPdfUrl(null);
     setVerifyStatus(null);
-    setShowBhashini(false);
-    setBhResult(null);
   }, [selectedDocument]);
 
   // ── Upload bidder / GST / Udyam PDF ──
@@ -101,89 +86,80 @@ export default function Viewer() {
     if (!file || file.type !== 'application/pdf') { alert('Please upload a valid PDF file.'); return; }
 
     setCustomPdfUrl(URL.createObjectURL(file));
-    setLoadError(false); setVerifyStatus(null); setVerifying(true); useDashboardStore.getState().setVisualAuthResult(null);
-    const cfg = UPLOAD_CONFIG[selectedDocument] || UPLOAD_CONFIG.tender;
+    setLoadError(false); setVerifyStatus(null); setVerifying(true);
+    useDashboardStore.getState().setVisualAuthResult(null);
 
+    const cfg = UPLOAD_CONFIG[selectedDocument] || UPLOAD_CONFIG.tender;
+    const requiresSignature = ['turnover', 'work_order', 'technical', 'mii', 'debarment', 'tender'].includes(selectedDocument);
+
+    // STEP 1: Always run visual authenticity check FIRST for docs that need a signature
+    if (requiresSignature) {
+      try {
+        const authFormData = new FormData();
+        authFormData.append('file', file);
+        const authRes = await fetch('http://localhost:8000/api/v1/verify-authenticity', { method: 'POST', body: authFormData });
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          // Set immediately so the dashboard shows the warning right away
+          useDashboardStore.getState().setVisualAuthResult({ ...authData, document_type: selectedDocument });
+        }
+      } catch (authErr) {
+        console.error('Visual auth check failed (backend may be offline):', authErr);
+        alert('⚠️ Backend is offline. Please wait and try again.');
+        setVerifyStatus('error');
+        setVerifying(false);
+        return;
+      }
+    } else {
+      useDashboardStore.getState().setVisualAuthResult(null);
+    }
+
+    // STEP 2: Run the parse endpoint
     try {
       const formData = new FormData();
       formData.append(cfg.field, file);
       const res = await fetch(`http://localhost:8000${cfg.endpoint}`, { method: 'POST', body: formData });
-        
-        // Only check physical signature/stamp for documents that legally require them
-        const requiresSignature = ['turnover', 'work_order', 'technical', 'mii', 'debarment', 'tender'].includes(selectedDocument);
-        if (requiresSignature) {
-          const authFormData = new FormData();
-          authFormData.append('file', file);
-          fetch('http://localhost:8000/api/v1/verify-authenticity', { method: 'POST', body: authFormData })
-            .then(r => r.json())
-            .then(data => {
-                useDashboardStore.getState().setVisualAuthResult({ ...data, document_type: selectedDocument });
-            })
-            .catch(err => console.error(err));
-        } else {
-          useDashboardStore.getState().setVisualAuthResult(null);
-        }
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const data = await res.json();
-              if (selectedDocument === 'gst')        setGstParseResult(data);
-        else if (selectedDocument === 'udyam') setUdyamParseResult(data);
-        else if (selectedDocument === 'epfo') setEpfoParseResult(data);
-        else if (selectedDocument === 'esic') setEsicParseResult(data);
-        else if (selectedDocument === 'startup') setStartupParseResult(data);
-        else if (selectedDocument === 'nsic') setNsicParseResult(data);
-        else if (selectedDocument === 'turnover') useDashboardStore.getState().setTurnoverParseResult(data);
-        else if (selectedDocument === 'itr') useDashboardStore.getState().setItrParseResult(data);
-        else if (selectedDocument === 'mii') useDashboardStore.getState().setMiiParseResult(data);
-        else if (selectedDocument === 'gstr3b') useDashboardStore.getState().setGstr3bParseResult(data);
-        else if (selectedDocument === 'debarment') useDashboardStore.getState().setDebarmentParseResult(data);
-        else if (selectedDocument === 'work_order') {
-          const val = data.extracted?.order_value_cr || 0;
-          useDashboardStore.getState().setExperienceResult({
-            result: val >= 5.0 ? 'PASS' : 'INSUFFICIENT_EVIDENCE',
-            requirement_cr: 5.0,
-            eligible_cr: val,
-            note: 'Extracted single work order via manual UI upload.',
-            evidence: [{ wo_number: data.extracted?.wo_number || 'UNKNOWN', client: data.extracted?.client || 'UNKNOWN', order_date: data.extracted?.order_date || 'N/A', value_cr: val }]
-          });
-        }
-        else if (selectedDocument === 'technical') {
-          useDashboardStore.getState().setTechnicalMatrixResult({
-            technical_score: 85, overall_result: 'PASS', summary: 'Extracted specs from single catalog upload.',
-            matrix: [{ parameter: 'Extracted Data', requirement: 'Valid Specs', vendor_value: data.extracted?.product_name || 'Catalog Item', result: 'PASS' }]
-          });
-        }
-        else if (selectedDocument === 'tender') useDashboardStore.getState().setVerifiedDocResult(data);
-        else useDashboardStore.getState().setVerifiedDocResult(data);
+
+      // If parse endpoint also returns visual_auth, use it (more authoritative)
+      if (data.visual_auth) {
+        useDashboardStore.getState().setVisualAuthResult({ ...data.visual_auth, document_type: selectedDocument });
+      }
+
+           if (selectedDocument === 'gst')        setGstParseResult(data);
+      else if (selectedDocument === 'udyam')    setUdyamParseResult(data);
+      else if (selectedDocument === 'epfo')     setEpfoParseResult(data);
+      else if (selectedDocument === 'esic')     setEsicParseResult(data);
+      else if (selectedDocument === 'startup')  setStartupParseResult(data);
+      else if (selectedDocument === 'nsic')     setNsicParseResult(data);
+      else if (selectedDocument === 'turnover') useDashboardStore.getState().setTurnoverParseResult(data);
+      else if (selectedDocument === 'itr')      useDashboardStore.getState().setItrParseResult(data);
+      else if (selectedDocument === 'mii')      useDashboardStore.getState().setMiiParseResult(data);
+      else if (selectedDocument === 'gstr3b')   useDashboardStore.getState().setGstr3bParseResult(data);
+      else if (selectedDocument === 'debarment') useDashboardStore.getState().setDebarmentParseResult(data);
+      else if (selectedDocument === 'work_order') {
+        const val = data.extracted?.order_value_cr || 0;
+        useDashboardStore.getState().setExperienceResult({
+          result: val >= 5.0 ? 'PASS' : 'INSUFFICIENT_EVIDENCE',
+          requirement_cr: 5.0,
+          eligible_cr: val,
+          note: 'Extracted single work order via manual UI upload.',
+          evidence: [{ wo_number: data.extracted?.wo_number || 'UNKNOWN', client: data.extracted?.client || 'UNKNOWN', order_date: data.extracted?.order_date || 'N/A', value_cr: val }]
+        });
+      }
+      else if (selectedDocument === 'technical') {
+        useDashboardStore.getState().setTechnicalMatrixResult(data);
+      }
+      else if (selectedDocument === 'tender') useDashboardStore.getState().setVerifiedDocResult(data);
+      else useDashboardStore.getState().setVerifiedDocResult(data);
+
       setVerifyStatus('ok');
     } catch (err) {
-      console.error('Upload failed:', err);
+      console.error('Upload parse failed:', err);
       setVerifyStatus('error');
     } finally {
       setVerifying(false);
-    }
-  };
-
-  // ── Bhashini translate regional tender ──
-  const handleBhashiniUpload = async (e) => {
-    const file = e.target.files[0];
-    e.target.value = '';
-    if (!file || file.type !== 'application/pdf') { alert('Please upload a valid PDF file.'); return; }
-
-    setCustomPdfUrl(URL.createObjectURL(file));
-    setBhLoading(true); setBhResult(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('regional_pdf', file);
-      formData.append('source_lang', bhLang);
-      const res = await fetch('http://localhost:8000/api/v1/tenders/translate-regional', { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Bhashini failed');
-      const data = await res.json();
-      setBhResult(data);
-    } catch (err) {
-      console.error('Bhashini failed:', err);
-    } finally {
-      setBhLoading(false);
     }
   };
 
@@ -216,35 +192,28 @@ export default function Viewer() {
           <input type="file" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
         </label>
 
-        {/* Bhashini button — ONLY on tender tab */}
-        {selectedDocument === 'tender' && (
-          <button
-            onClick={() => { setShowBhashini(v => !v); setBhResult(null); }}
-            className={`border px-3 py-1 rounded shadow-sm transition flex items-center text-xs font-medium
-              ${showBhashini
-                ? 'bg-orange-100 border-orange-400 text-orange-800'
-                : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300 text-orange-700 hover:bg-orange-100'}`}>
-            🇮🇳 Bhashini Translate
-          </button>
-        )}
-
         {/* Status badges */}
-        {verifyStatus === 'ok' && (
+        {verifyStatus === 'ok' && !visualAuthResult && (
           <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
             ✓ {selectedDocument === 'gst' ? 'GST Parsed' : selectedDocument === 'udyam' ? 'Udyam Parsed' : 'Verified'}
           </span>
         )}
-        {verifyStatus === 'error' && (
-          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">✗ Failed</span>
-        )}
-        {bhResult && (
-          <span className="text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
-            🇮🇳 Translated ({bhResult.source_language.toUpperCase()})
+        {verifyStatus === 'ok' && visualAuthResult?.is_signed_and_stamped && (
+          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+            ✓ Signed &amp; Verified
           </span>
+        )}
+        {visualAuthResult && !visualAuthResult.is_signed_and_stamped && (
+          <span className="text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+            ⚠ Unsigned — See Dashboard
+          </span>
+        )}
+        {verifyStatus === 'error' && !visualAuthResult && (
+          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">✗ Upload Failed</span>
         )}
 
         {customPdfUrl && (
-          <button onClick={() => { setCustomPdfUrl(null); setVerifyStatus(null); setBhResult(null); setShowBhashini(false); useDashboardStore.getState().setVisualAuthResult(null); }}
+          <button onClick={() => { setCustomPdfUrl(null); setVerifyStatus(null); useDashboardStore.getState().setVisualAuthResult(null); }}
             className="text-red-500 hover:text-red-700 underline ml-1 text-xs">
             Clear Upload
           </button>
@@ -257,45 +226,6 @@ export default function Viewer() {
           </a>
         </span>
       </div>
-
-      {/* ── Bhashini panel — expands below toolbar on tender tab ── */}
-      {selectedDocument === 'tender' && showBhashini && (
-        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-t-0 border-orange-200 px-4 py-3 flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-orange-800">🇮🇳 Bhashini OCR + Translation</span>
-            <span className="text-[9px] bg-orange-100 border border-orange-300 text-orange-700 px-2 py-0.5 rounded-full font-bold">MeitY AI</span>
-            <span className="text-[10px] text-orange-600 ml-1">Upload a regional language tender document — it will be translated to English automatically</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-orange-800">Language:</label>
-            <select value={bhLang} onChange={e => setBhLang(e.target.value)}
-              className="text-xs border border-orange-300 rounded px-2 py-1 bg-white text-slate-700">
-              {LANG_OPTIONS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-            </select>
-            <label className={`cursor-pointer border px-3 py-1 rounded shadow-sm transition flex items-center text-xs font-medium
-              ${bhLoading ? 'bg-orange-100 border-orange-300 text-orange-500 animate-pulse' : 'bg-orange-600 text-white hover:bg-orange-700'}`}>
-              {bhLoading ? 'Translating...' : 'Upload & Translate'}
-              <input type="file" accept="application/pdf" className="hidden" onChange={handleBhashiniUpload} />
-            </label>
-          </div>
-
-          {/* Bhashini result */}
-          {bhResult && (
-            <div className="bg-white rounded border border-orange-200 p-2 text-xs space-y-1">
-              <div className="flex items-center gap-2">
-                <span className={`font-bold px-2 py-0.5 rounded-full text-[9px] ${bhResult.translation_source === 'BHASHINI_API' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                  {bhResult.translation_source === 'BHASHINI_API' ? '✓ BHASHINI API' : '⚠ SIMULATION MODE'}
-                </span>
-                <span className="text-slate-500 text-[10px]">{bhResult.bhashini_note}</span>
-              </div>
-              <div className="text-slate-700 italic border-t border-slate-100 pt-1">
-                <span className="font-semibold not-italic">Translated text: </span>{bhResult.translated_text_preview}
-              </div>
-              <div className="text-emerald-700 font-semibold">✓ {bhResult.rule_count} compliance rules extracted from translated document</div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* PDF iframe */}
       <iframe
