@@ -33,8 +33,8 @@ export default function Dashboard({ bidderId }) {
     async function fetchData() {
       setLoading(true);
       try {
-        await fetch(`http://localhost:8000/api/v1/verify/bidder/${bidderId}/tender/tender-sih-2026`, { method: 'POST' });
-        const res = await fetch(`http://localhost:8000/api/v1/dashboard/bidder/${bidderId}`);
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/verify/bidder/${bidderId}/tender/tender-sih-2026`, { method: 'POST' });
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/dashboard/bidder/${bidderId}`);
         if (!res.ok) throw new Error("Failed to fetch dashboard data");
         const json = await res.json();
         setData(json);

@@ -13,12 +13,12 @@ export default function BatchProcessor({ onClose }) {
     if (status === 'PROCESSING' && batchId) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`http://localhost:8000/api/v1/batch/${batchId}/status`);
+          const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/batch/${batchId}/status`);
           if (res.ok) {
             const data = await res.json();
             
             // we also need the full batch details to get bidder info
-            const resDetails = await fetch(`http://localhost:8000/api/v1/batch/${batchId}`);
+            const resDetails = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/batch/${batchId}`);
             if (resDetails.ok) {
                 const fullData = await resDetails.json();
                 setBidders(fullData.bidders || {});
@@ -46,7 +46,7 @@ export default function BatchProcessor({ onClose }) {
     const fd = new FormData();
     fd.append('batch_zip', file);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/batch/upload', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/batch/upload', {
         method: 'POST',
         body: fd
       });

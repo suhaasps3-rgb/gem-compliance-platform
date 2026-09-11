@@ -97,7 +97,7 @@ export default function Viewer() {
       try {
         const authFormData = new FormData();
         authFormData.append('file', file);
-        const authRes = await fetch('http://localhost:8000/api/v1/verify-authenticity', { method: 'POST', body: authFormData });
+        const authRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/verify-authenticity', { method: 'POST', body: authFormData });
         if (authRes.ok) {
           const authData = await authRes.json();
           // Set immediately so the dashboard shows the warning right away
@@ -118,7 +118,7 @@ export default function Viewer() {
     try {
       const formData = new FormData();
       formData.append(cfg.field, file);
-      const res = await fetch(`http://localhost:8000${cfg.endpoint}`, { method: 'POST', body: formData });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${cfg.endpoint}`, { method: 'POST', body: formData });
       if (!res.ok) throw new Error(`Backend error: ${res.status}`);
       const data = await res.json();
 

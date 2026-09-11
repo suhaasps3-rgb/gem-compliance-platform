@@ -13,7 +13,7 @@ export default function DocumentTabs() {
 
   React.useEffect(() => {
     // fetch document URLs for a dummy tender id (could be dynamic)
-    fetch('http://localhost:8000/api/v1/tenders/tender-demo-001/documents')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/tenders/tender-demo-001/documents')
       .then((res) => res.json())
       .then(setUrls)
       .catch(() => setUrls({}));

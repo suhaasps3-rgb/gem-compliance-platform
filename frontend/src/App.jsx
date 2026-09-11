@@ -17,7 +17,7 @@ function App() {
     setIsScanning(true);
     try {
       const response = await fetch(
-        'http://localhost:8000/api/v1/tenders/tender-sih-2026/collusion-signals'
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/tenders/tender-sih-2026/collusion-signals'
       );
       const data = await response.json();
       setCartelData(data.investigative_leads);
