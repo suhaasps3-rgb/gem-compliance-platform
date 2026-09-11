@@ -1,43 +1,116 @@
-# GeM Compliance Platform
+# SATARK — AI-Powered GeM Compliance Verification
 
-An intelligent, deterministic compliance engine for government procurement, built for the Smart India Hackathon.
+> **Smart India Hackathon 2026** · Government e-Marketplace (GeM) · Procurement Integrity
 
-## The "Wow Moment"
-This platform does not use AI to disqualify bidders. Instead, it uses a **NetworkX Evidence Provenance Graph** to deterministically cross-reference PDF claims against authoritative government APIs (MCA21, Udyam, GSTN). 
+[![React](https://img.shields.io/badge/React-18-61dafb?logo=react)](https://reactjs.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-When a contradiction is found (e.g., a bidder claims Micro MSME status, but MCA21 reports turnover exceeding the limit), the platform surfaces it in a split-screen UI and empowers the Procurement Officer to instantly generate a legally-formatted Show-Cause Notice citing the exact **GFR 2017** regulations. All officer actions are securely logged to a **SHA-256 Tamper-Evident Ledger** that aggressively masks PII to comply with the DPDP Act.
+SATARK is an AI-powered compliance verification platform for government procurement on GeM. It automates document verification, detects fraud, flags cartelization, and gives procurement officers a single dashboard to make fast, auditable decisions.
+
+---
+
+## The Problem
+
+India's Government e-Marketplace processes thousands of tenders annually. Procurement officers manually verify dozens of documents per bidder — GST certificates, Udyam registrations, CA turnover certificates, work orders, EPFO/ESIC records — entirely by hand. Fraudulent documents slip through. Cartels go undetected. The process is slow, opaque, and audit-unfriendly.
+
+---
+
+## What SATARK Does
+
+### Compliance Score & Dashboard
+Every bidder gets a 0–100 compliance score computed from document verifications, graph contradictions, experience validation, and technical spec matching. The dashboard updates live as documents are uploaded.
+
+### AI Document Parsing
+Upload any GeM document and SATARK extracts structured data instantly using forensic PDF analysis — no third-party OCR API needed.
+
+| Document | Extracted Fields |
+|---|---|
+| GST Certificate | GSTIN, composition status, filing history |
+| Udyam Registration | MSME category, investment, turnover |
+| CA Turnover Certificate | Turnover (Cr), UDIN, CA name, FY |
+| Work Orders | Value, client, date, execution status |
+| EPFO / ESIC | Contribution status, employee count |
+| NSIC Certificate | Categories, EMD exemption eligibility |
+
+### Evidence Graph Engine
+Every extracted claim is a node in a knowledge graph. Contradictions between documents are automatically surfaced — e.g. MCA-reported turnover vs CA certificate discrepancy.
+
+### Visual Authenticity Check
+Detects missing signatures and rubber stamps forensically. Unsigned documents trigger a red critical banner and a 50-point score penalty on the dashboard.
+
+### Forgery / Identity Mismatch Detection
+If a bidder uploads another company's document, SATARK detects the entity name mismatch and **blocks the compliance score** with a FORGERY ALERT.
+
+### Anti-Cartelization Scanner
+Cross-bidder analysis flags shared directors, identical bid structures, and suspiciously correlated pricing patterns.
+
+### Batch Mode
+Upload a ZIP of all bidder submissions. SATARK scores every bidder simultaneously with full compliance breakdowns.
+
+### Officer Final Review
+AI provides a recommendation. The procurement officer makes the authoritative decision. Every action is hashed and logged to an immutable audit trail.
+
+---
 
 ## Architecture
-- **Backend:** Python, FastAPI, NetworkX (Graph Traversal)
-- **Frontend:** React, Vite, Tailwind CSS
-- **Data Engine:** Deterministic rule resolution backed by simulated LLM extraction.
+
+```
+Frontend (React + Vite + Tailwind)
+  PDF Viewer | Compliance Dashboard | Batch Mode | Evidence Graph
+       |
+  FastAPI Backend (Python 3.11)
+       |
+  Document Parsers (PyMuPDF) | Graph Engine (NetworkX) | Collusion Engine
+  Visual Auth | Batch Engine | Audit Engine
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, Vite, Tailwind CSS, Zustand |
+| Backend | FastAPI, Python 3.11, Uvicorn |
+| PDF Analysis | PyMuPDF, ReportLab |
+| Graph Engine | NetworkX |
+| Deployment | Vercel (frontend) + Render (backend) |
+
+---
 
 ## Running Locally
 
-### 1. Start the Backend.
 ```bash
+# Backend
 cd backend
-python -m venv venv
-# Activate venv (Windows: .\venv\Scripts\Activate.ps1 | Mac/Linux: source venv/bin/activate)
 pip install -r requirements.txt
-python main.py
-```
+uvicorn main:app --reload
 
-### 2. Start the Frontend
-```bash
+# Frontend
 cd frontend
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:5173` to view the Dashboard. Toggle between "Acme Corp" (Green/Compliant) and "Delta Solutions" (Red/Contradiction) to see the engine in action.
+---
 
-## Testing
-Run the backend automated tests:
-```bash
-cd backend
-# With venv activated
-python test_graph.py
-python test_collusion.py
-python test_compiler.py
-```
+## Compliance Score
+
+| Score | Risk | Action |
+|---|---|---|
+| 80-100 | LOW | Approve |
+| 60-79 | MEDIUM | Clarify |
+| 40-59 | HIGH | Officer Review |
+| 0-39 | CRITICAL | Reject |
+| BLOCKED | FORGERY | Investigate |
+
+---
+
+## Built At
+
+**Smart India Hackathon 2026**
+
+MIT License
