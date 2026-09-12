@@ -15,7 +15,7 @@ export default function TenderConfigurator() {
     const formData = new FormData();
     formData.append('tender_pdf', file);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/tenders/tender-custom/compile-rules', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/tenders/tender-custom/compile-rules`, {
         method: 'POST', body: formData,
       });
       if (!res.ok) throw new Error('Failed to compile rules');

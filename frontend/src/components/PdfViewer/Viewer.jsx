@@ -97,7 +97,7 @@ export default function Viewer() {
       try {
         const authFormData = new FormData();
         authFormData.append('file', file);
-        const authRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/verify-authenticity', { method: 'POST', body: authFormData });
+        const authRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/verify-authenticity`, { method: 'POST', body: authFormData });
         if (authRes.ok) {
           const authData = await authRes.json();
           // Set immediately so the dashboard shows the warning right away

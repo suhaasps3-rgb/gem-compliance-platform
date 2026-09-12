@@ -46,7 +46,7 @@ export default function BatchProcessor({ onClose }) {
     const fd = new FormData();
     fd.append('batch_zip', file);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/batch/upload', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/batch/upload`, {
         method: 'POST',
         body: fd
       });
