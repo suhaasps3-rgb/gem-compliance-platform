@@ -206,7 +206,18 @@ function App() {
         </div>
       )}
 
-      {showBatchMode && <BatchProcessor onClose={() => setShowBatchMode(false)} />}
+      {showBatchMode && (
+        <BatchProcessor 
+          onClose={() => setShowBatchMode(false)} 
+          onSelectBidder={(bidderId) => {
+            setCurrentBidder(bidderId);
+            useDashboardStore.getState().setCurrentBidder(bidderId);
+            useDashboardStore.getState().clearAllDocs();
+            useDashboardStore.getState().clearComplianceBlock();
+            setShowBatchMode(false);
+          }}
+        />
+      )}
     </div>
   );
 }
