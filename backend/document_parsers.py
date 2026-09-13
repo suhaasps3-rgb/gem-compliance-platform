@@ -4,17 +4,18 @@ Follows same pattern as parse-gst and parse-udyam endpoints in main.py.
 All parsers accept raw PDF bytes and return structured extraction + verification dicts.
 """
 import re
-import pymupdf  # fitz
+import io
+import pypdf
 from datetime import datetime, date
 from typing import Optional
 
 
 def _extract_text(pdf_bytes: bytes) -> str:
-    """Extract full text from PDF bytes using PyMuPDF."""
+    """Extract full text from PDF bytes using pypdf (pure Python, no compilation)."""
     try:
-        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-        return " ".join(page.get_text() for page in doc)
-    except Exception as e:
+        reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+        return " ".join(page.extract_text() or "" for page in reader.pages)
+    except Exception:
         return ""
 
 

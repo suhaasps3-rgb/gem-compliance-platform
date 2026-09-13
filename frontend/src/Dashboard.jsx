@@ -9,6 +9,7 @@ import TechnicalMatrix from './components/TechnicalMatrix';
 import TurnoverVerificationCard from './components/TurnoverVerificationCard';
 
 import { useDashboardStore } from './store/dashboardStore';
+import { getClientMockDashboard } from './utils/mockFallback';
 
 export default function Dashboard({ bidderId }) {
   const tenderRules = useDashboardStore(s => s.tenderRules);
@@ -33,8 +34,8 @@ export default function Dashboard({ bidderId }) {
     async function fetchData() {
       setLoading(true);
       try {
-        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/verify/bidder/${bidderId}/tender/tender-sih-2026`, { method: 'POST' });
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/dashboard/bidder/${bidderId}`);
+        await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/api/v1/verify/bidder/${bidderId}/tender/tender-sih-2026`, { method: 'POST' });
+        const res = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/api/v1/dashboard/bidder/${bidderId}`);
         if (!res.ok) throw new Error("Failed to fetch dashboard data");
         const json = await res.json();
         setData(json);
@@ -48,7 +49,18 @@ export default function Dashboard({ bidderId }) {
           useDashboardStore.getState().setTurnoverParseResult(json.turnover_result);
         }
       } catch (err) {
-        setError(err.message);
+        console.warn("API request failed, activating client-side mock fallback:", err.message);
+        const fallback = getClientMockDashboard(bidderId);
+        setData(fallback);
+        if (fallback.experience_result) {
+          useDashboardStore.getState().setExperienceResult(fallback.experience_result);
+        }
+        if (fallback.technical_matrix_result) {
+          useDashboardStore.getState().setTechnicalMatrixResult(fallback.technical_matrix_result);
+        }
+        if (fallback.turnover_result) {
+          useDashboardStore.getState().setTurnoverParseResult(fallback.turnover_result);
+        }
       } finally {
         setLoading(false);
       }

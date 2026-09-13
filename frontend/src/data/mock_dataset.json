@@ -1,0 +1,902 @@
+{
+  "dataset_description": "Demo Dataset for GeM Compliance Verification - SIH Hackathon",
+  "bidders": [
+    {
+      "id": "bidder-acme-001",
+      "name": "Acme Corp",
+      "scenario": "Green (Compliant)",
+      "expected_status": "VERIFIED_COMPLIANT",
+      "claims": {
+        "is_msme": true,
+        "turnover_cr": 12.0,
+        "local_content_pct": 70,
+        "pan": "ACME1234Q",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ],
+        "subcontracting_pct": 5
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 12.0,
+        "active_directors": [
+          "DIN99991111"
+        ]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro",
+        "turnover_cr": 4.5
+      },
+      "gst_mock": {
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
+      },
+      "oem_mock": {
+        "status": "VERIFIED",
+        "vendor": "Acme Corp",
+        "validity": "2026-12-31",
+        "reference": "OEM/2026/01"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED",
+        "txn_id": "DL-999-ABCD"
+      },
+      "missing_documents": [],
+      "submission_metadata": {
+        "ip_address": "10.0.1.5",
+        "user_agent": "Chrome/126"
+      },
+      "epfo_mock": {
+        "status": "ACTIVE",
+        "employee_count": 22,
+        "contribution_period": "August 2026",
+        "contribution_status": "PAID"
+      },
+      "esic_mock": {
+        "status": "ACTIVE",
+        "contribution_status": "PAID"
+      },
+      "startup_mock": null,
+      "nsic_mock": null,
+      "work_orders": [
+        {
+          "wo_number": "WO-1023",
+          "client": "Reliance Industries",
+          "value_cr": 2.1,
+          "order_date": "01/04/2023",
+          "fy": "2023-24",
+          "confidence": 0.94
+        },
+        {
+          "wo_number": "WO-1187",
+          "client": "ONGC",
+          "value_cr": 1.75,
+          "order_date": "15/09/2022",
+          "fy": "2022-23",
+          "confidence": 0.88
+        },
+        {
+          "wo_number": "WO-1452",
+          "client": "HPCL",
+          "value_cr": 3.5,
+          "order_date": "10/12/2024",
+          "fy": "2024-25",
+          "confidence": 0.91
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 520,
+        "Pressure": 22,
+        "Efficiency": 91,
+        "Voltage": 415
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "ai_recommendation": {
+        "decision": "RECOMMENDED",
+        "reasoning": "All extracted claims match statutory registry evidence perfectly. AI confirms Udyam, ITR, and MCA21 data reconcile.",
+        "red_flags": [],
+        "missing_docs": []
+      },
+      "gstn_mock": {
+        "gstr_filed_continuous_12m": true
+      },
+      "vigilance_mock": {
+        "is_debarred_currently": false
+      }
+    },
+    {
+      "id": "bidder-beta-002",
+      "name": "BETA LLC",
+      "scenario": "Yellow (Clarification Needed)",
+      "expected_status": "NEEDS_REVIEW",
+      "notes": "Missing mandatory EMD exemption certificate.",
+      "claims": {
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "Local_Content_Declaration",
+          "Udyam_Certificate"
+        ],
+        "turnover_cr": 18.0,
+        "subcontracting_pct": 15,
+        "local_content_pct": 65
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 18.0
+      },
+      "udyam_mock": {},
+      "gst_mock": {
+        "return_filing_status": "FILED"
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.225"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "ai_recommendation": {
+        "decision": "NEEDS REVIEW",
+        "missing_docs": [],
+        "reasoning": "Turnover of INR 18.0 Cr exceeds the MSME eligibility cap of INR 15 Cr. Additionally, sub-contracting percentage of 15% breaches the 10% tender cap. Requires clarification.",
+        "red_flags": [
+          "Turnover 18.0 Cr exceeds MSME cap (15 Cr)",
+          "Sub-contracting 15% exceeds tender cap (10%)"
+        ]
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-2011",
+          "client": "Indian Oil Corp",
+          "value_cr": 3.8,
+          "order_date": "12/05/2023",
+          "fy": "2023-24",
+          "confidence": 0.92
+        },
+        {
+          "wo_number": "WO-2012",
+          "client": "BPCL",
+          "value_cr": 2.7,
+          "order_date": "18/11/2024",
+          "fy": "2024-25",
+          "confidence": 0.9
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 550,
+        "Pressure": 25,
+        "Efficiency": 89,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-gamma-003",
+      "name": "Gamma Technologies Pvt Ltd",
+      "scenario": "Red (Critical Fraud)",
+      "expected_status": "NON_COMPLIANT",
+      "notes": "Entity name mismatch (Gamma Tech vs Gamma Technologies Pvt Ltd)",
+      "claims": {
+        "pan": "BKKPA1234F",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ],
+        "turnover_cr": 10.0,
+        "subcontracting_pct": 5,
+        "local_content_pct": 40
+      },
+      "mca21_mock": {
+        "legal_name": "Gamma Technologies Pvt Ltd"
+      },
+      "udyam_mock": {
+        "legal_name": "Gamma Tech"
+      },
+      "gst_mock": {
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.64"
+      },
+      "oem_mock": {
+        "status": "INVALID_AUTHORIZATION_CODE",
+        "vendor": "Unknown Entity",
+        "validity": "N/A"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "pan": "REAL9999X"
+      },
+      "ai_recommendation": {
+        "decision": "NOT RECOMMENDED",
+        "reasoning": "CRITICAL FRAUD: Identity anchoring failed. The PAN extracted from the uploaded ITR belongs to a different entity. Furthermore, temporal evaluation found an active debarment on the tender closing date.",
+        "red_flags": [
+          "Cross-Bidder Forgery: Extracted PAN (REAL9999X) != Registered PAN (BKKPA1234F)",
+          "Active Debarment found in MoF Registry"
+        ],
+        "missing_docs": []
+      },
+      "debarment_mock": {
+        "is_debarred_currently": true
+      },
+      "gstn_mock": {
+        "gstr_filed_continuous_12m": false,
+        "months_missed": 4
+      },
+      "vigilance_mock": {
+        "is_debarred_currently": true
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-3001",
+          "client": "GAIL India",
+          "value_cr": 1.8,
+          "order_date": "10/01/2023",
+          "fy": "2022-23",
+          "confidence": 0.85
+        },
+        {
+          "wo_number": "WO-3002",
+          "client": "NTPC Ltd",
+          "value_cr": 1.5,
+          "order_date": "05/08/2022",
+          "fy": "2022-23",
+          "confidence": 0.8
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 450,
+        "Pressure": 18,
+        "Efficiency": 82,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-delta-004",
+      "name": "Delta Solutions",
+      "scenario": "Deep Investigation (The Contradiction)",
+      "expected_status": "NEEDS_REVIEW",
+      "notes": "MSME Claim is 8.5Cr (Micro), but MCA21 is 14.5Cr (Small/Medium). Breaches 10Cr limit.",
+      "claims": {
+        "pan": "DELTA5678Z",
+        "turnover_cr": 8.5,
+        "enterprise_type": "Micro",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 14.5,
+        "company_name": "Delta Solutions Private Limited"
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "turnover_cr": 14.5
+      },
+      "gst_mock": {
+        "status": "ACTIVE",
+        "legal_name": "Delta Solutions",
+        "return_filing_status": "FILED"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "mii_mock": {
+        "local_content_pct": 38,
+        "classification": "Non-Local Supplier"
+      },
+      "submission_metadata": {
+        "ip_address": "10.0.1.5"
+      },
+      "oem_mock": {
+        "status": "AUTHORIZATION_REVOKED",
+        "vendor": "Delta Solutions",
+        "validity": "2024-01-01"
+      },
+      "digilocker_mock": {
+        "status": "NOT_FOUND"
+      },
+      "debarment_mock": {
+        "is_debarred_currently": true
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-4001",
+          "client": "BHEL",
+          "value_cr": 2.8,
+          "order_date": "14/02/2023",
+          "fy": "2022-23",
+          "confidence": 0.91
+        },
+        {
+          "wo_number": "WO-4002",
+          "client": "BEL",
+          "value_cr": 2.6,
+          "order_date": "20/06/2024",
+          "fy": "2024-25",
+          "confidence": 0.89
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 510,
+        "Pressure": 21,
+        "Efficiency": 88,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-epsilon-005",
+      "name": "Epsilon Industries",
+      "scenario": "Wow Case (The Cartel) - Bidder 1",
+      "expected_status": "INVESTIGATIVE_LEAD",
+      "claims": {
+        "pan": "EPSILON123",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
+      "mca21_mock": {
+        "active_directors": [
+          "DIN01234567"
+        ]
+      },
+      "pdf_metadata": {
+        "author": "SystemUser1",
+        "creation_date": "2026-08-25T14:32:00Z"
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.34"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-5001",
+          "client": "HAL",
+          "value_cr": 3.1,
+          "order_date": "11/03/2023",
+          "fy": "2022-23",
+          "confidence": 0.93
+        },
+        {
+          "wo_number": "WO-5002",
+          "client": "NALCO",
+          "value_cr": 2.5,
+          "order_date": "09/09/2024",
+          "fy": "2024-25",
+          "confidence": 0.87
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 530,
+        "Pressure": 23,
+        "Efficiency": 90,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-zeta-006",
+      "name": "Zeta Trade",
+      "scenario": "Wow Case (The Cartel) - Bidder 2",
+      "expected_status": "INVESTIGATIVE_LEAD",
+      "claims": {
+        "pan": "ZETATRD999",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
+      "mca21_mock": {
+        "active_directors": [
+          "DIN01234567"
+        ]
+      },
+      "pdf_metadata": {
+        "author": "SystemUser1",
+        "creation_date": "2026-08-25T14:32:00Z"
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.12"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-6001",
+          "client": "DRDO",
+          "value_cr": 1.2,
+          "order_date": "01/01/2024",
+          "fy": "2023-24",
+          "confidence": 0.85
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 420,
+        "Pressure": 16,
+        "Efficiency": 80,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-theta-007",
+      "name": "Theta Logistics",
+      "scenario": "Time Travel (The Expired Debarment)",
+      "expected_status": "NEEDS_REVIEW",
+      "notes": "Debarment expired in 2026, but was active during Tender Closing Date (2025).",
+      "claims": {
+        "pan": "THETA4444X",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
+      "debarment_mock": {
+        "is_debarred_currently": false,
+        "historical_records": [
+          {
+            "start_date": "2024-01-15",
+            "end_date": "2026-01-15",
+            "reason": "Rule 151 Violation"
+          }
+        ]
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.1.177"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-7001",
+          "client": "Coal India",
+          "value_cr": 4.5,
+          "order_date": "05/05/2023",
+          "fy": "2023-24",
+          "confidence": 0.95
+        },
+        {
+          "wo_number": "WO-7002",
+          "client": "NMDC",
+          "value_cr": 1.5,
+          "order_date": "12/12/2024",
+          "fy": "2024-25",
+          "confidence": 0.9
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 505,
+        "Pressure": 20,
+        "Efficiency": 86,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-echo-005",
+      "name": "Echo Enterprises",
+      "scenario": "Multi-Rule Violation (Make In India, Sub-contracting, GST)",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "is_msme": true,
+        "turnover_cr": 8.0,
+        "local_content_pct": 30,
+        "subcontracting_pct": 45,
+        "pan": "ECHO1234E",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate"
+        ]
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 8.5,
+        "active_directors": [
+          "DIN44445555"
+        ]
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": false,
+        "months_missed": 6
+      },
+      "vigilance_mock": {
+        "debarred_history": []
+      },
+      "oem_mock": {
+        "status": "EXPIRED",
+        "vendor": "Echo Enterprises",
+        "validity": "2023-01-01"
+      },
+      "digilocker_mock": {
+        "status": "NOT_VERIFIED"
+      },
+      "missing_documents": [
+        "Annexure_VII_Local_Content_Declaration.pdf",
+        "Form_B_Financial_Standing.pdf"
+      ],
+      "submission_metadata": {
+        "ip_address": "192.168.1.151"
+      },
+      "itr_mock": {
+        "status": "NOT_FILED",
+        "last_filed_year": "2023"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-8001",
+          "client": "ISRO",
+          "value_cr": 2.5,
+          "order_date": "10/10/2023",
+          "fy": "2023-24",
+          "confidence": 0.92
+        },
+        {
+          "wo_number": "WO-8002",
+          "client": "L&T",
+          "value_cr": 3.0,
+          "order_date": "15/01/2025",
+          "fy": "2024-25",
+          "confidence": 0.9
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 515,
+        "Pressure": 21,
+        "Efficiency": 87,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-foxtrot-006",
+      "name": "Foxtrot Infrastructure",
+      "scenario": "Partial Violation (MII + GST)",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "is_msme": true,
+        "turnover_cr": 7.2,
+        "local_content_pct": 35,
+        "subcontracting_pct": 15,
+        "pan": "FXINF7890K",
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 7.2,
+        "active_directors": [
+          "DIN88771122",
+          "DIN88771133"
+        ]
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": false,
+        "months_missed": 3
+      },
+      "vigilance_mock": {
+        "debarred_history": []
+      },
+      "submission_metadata": {
+        "ip_address": "192.168.5.22"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-0987",
+          "client": "Indian Oil",
+          "value_cr": 1.2,
+          "order_date": "01/06/2021",
+          "fy": "2021-22",
+          "confidence": 0.82
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 450,
+        "Pressure": 18,
+        "Efficiency": 87,
+        "Voltage": 415
+      },
+      "oem_mock": {
+        "status": "VENDOR_NOT_AUTHORIZED",
+        "vendor": "Foxtrot Infra",
+        "validity": "N/A"
+      },
+      "digilocker_mock": {
+        "status": "HASH_MISMATCH"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "gst_mock": {
+        "return_filing_status": "FILED"
+      }
+    },
+    {
+      "id": "bidder-indigo-010",
+      "name": "Indigo Innovations Pvt Ltd",
+      "scenario": "Startup India + NSIC Exemptions",
+      "expected_status": "VERIFIED_COMPLIANT",
+      "claims": {
+        "turnover_cr": 3.2,
+        "local_content_pct": 65,
+        "subcontracting_pct": 10,
+        "pan": "INDGO9012P",
+        "is_msme": true,
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 3.2,
+        "active_directors": [
+          "DIN55556666"
+        ]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro"
+      },
+      "gst_mock": {
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": true,
+        "months_missed": 0
+      },
+      "startup_mock": {
+        "recognition_number": "DIPP12345",
+        "certificate_status": "ACTIVE",
+        "entity_name": "Indigo Innovations Pvt Ltd",
+        "emd_exemption_supported": true
+      },
+      "nsic_mock": {
+        "certificate_number": "NS/MC/CH/2023/01234",
+        "nsic_valid": true,
+        "emd_exemption_supported": true
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-2201",
+          "client": "BPCL",
+          "value_cr": 6.8,
+          "order_date": "20/07/2023",
+          "fy": "2023-24",
+          "confidence": 0.92
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 510,
+        "Pressure": 21,
+        "Efficiency": 92,
+        "Voltage": 415
+      },
+      "submission_metadata": {
+        "ip_address": "172.16.0.10"
+      },
+      "oem_mock": {
+        "status": "VERIFIED",
+        "vendor": "Indigo",
+        "validity": "2028-01-01"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      }
+    },
+    {
+      "id": "bidder-juliet-011",
+      "name": "Juliet Engineering Works",
+      "scenario": "Turnover UDIN Validation",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "turnover_cr": 8.5,
+        "local_content_pct": 60,
+        "subcontracting_pct": 12,
+        "pan": "JULET4567K",
+        "is_msme": true,
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card",
+          "Turnover_Certificate",
+          "OEM_Authorization",
+          "Local_Content_Declaration"
+        ]
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 8.5,
+        "active_directors": [
+          "DIN77778888"
+        ]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro"
+      },
+      "gst_mock": {
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": true,
+        "months_missed": 0
+      },
+      "ca_certificate_mock": {
+        "financial_year": "2024-25",
+        "turnover_cr": 8.5,
+        "ca_name": "CA Ramesh Kumar",
+        "udin": "24333ABC123456",
+        "udin_format_valid": true,
+        "udin_verification_state": "UDIN_FORMAT_VALID"
+      },
+      "submission_metadata": {
+        "ip_address": "172.16.0.10"
+      },
+      "oem_mock": {
+        "status": "EXPIRED",
+        "vendor": "Juliet",
+        "validity": "2021-12-31"
+      },
+      "digilocker_mock": {
+        "status": "INVALID_DOCUMENT_ID"
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-1101",
+          "client": "SAIL",
+          "value_cr": 4.2,
+          "order_date": "18/08/2023",
+          "fy": "2023-24",
+          "confidence": 0.94
+        },
+        {
+          "wo_number": "WO-1102",
+          "client": "RITES",
+          "value_cr": 1.8,
+          "order_date": "22/02/2024",
+          "fy": "2023-24",
+          "confidence": 0.88
+        }
+      ],
+      "technical_specs": {
+        "Pump Capacity": 525,
+        "Pressure": 22,
+        "Efficiency": 89,
+        "Voltage": 415
+      }
+    },
+    {
+      "id": "bidder-kilo-012",
+      "name": "Kilo Systems Ltd",
+      "scenario": "Technical Specs FAIL",
+      "expected_status": "NEEDS_REVIEW",
+      "claims": {
+        "turnover_cr": 6.0,
+        "local_content_pct": 55,
+        "subcontracting_pct": 18,
+        "pan": "KILOS6789M",
+        "is_msme": true,
+        "submitted_docs": [
+          "GST_Certificate",
+          "PAN_Card"
+        ]
+      },
+      "mca21_mock": {
+        "reported_turnover_cr": 6.0,
+        "active_directors": [
+          "DIN99990000"
+        ]
+      },
+      "udyam_mock": {
+        "status": "ACTIVE",
+        "enterprise_type": "Micro"
+      },
+      "gst_mock": {
+        "status": "ACTIVE",
+        "return_filing_status": "FILED"
+      },
+      "gstn_mock": {
+        "status": "ACTIVE",
+        "gstr_filed_continuous_12m": true,
+        "months_missed": 0
+      },
+      "technical_specs": {
+        "Pump Capacity": 450,
+        "Pressure": 18,
+        "Efficiency": 87,
+        "Voltage": 415
+      },
+      "submission_metadata": {
+        "ip_address": "203.0.113.55"
+      },
+      "oem_mock": {
+        "status": "VERIFIED",
+        "vendor": "Kilo",
+        "validity": "2027-01-01"
+      },
+      "digilocker_mock": {
+        "status": "VERIFIED"
+      },
+      "debarment_mock": {
+        "is_debarred_currently": true
+      },
+      "itr_mock": {
+        "status": "FILED",
+        "last_filed_year": "2025"
+      },
+      "work_orders": [
+        {
+          "wo_number": "WO-1201",
+          "client": "Mazagon Dock",
+          "value_cr": 2.0,
+          "order_date": "12/04/2023",
+          "fy": "2023-24",
+          "confidence": 0.85
+        }
+      ]
+    }
+  ]
+}

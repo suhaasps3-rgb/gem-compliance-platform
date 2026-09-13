@@ -7,7 +7,8 @@ import uuid
 import json
 import os
 import re as _re
-import fitz as _fitz
+import io as _io
+import pypdf as _pypdf
 from graph_engine import EvidenceGraphEngine
 from collusion_engine import CollusionEngine
 from rule_compiler import TenderRuleCompiler
@@ -135,7 +136,6 @@ async def compile_rules(tender_id: str, tender_pdf: UploadFile = File(...)):
     )
 
 import re as _re
-import fitz as _fitz
 
 @app.post("/api/v1/bidders/verify-document")
 async def verify_bidder_document(bidder_pdf: UploadFile = File(...)):
@@ -147,8 +147,8 @@ async def verify_bidder_document(bidder_pdf: UploadFile = File(...)):
     file_bytes = await bidder_pdf.read()
     
     # --- Extract text from PDF ---
-    doc = _fitz.open(stream=file_bytes, filetype="pdf")
-    full_text = " ".join(page.get_text() for page in doc)
+    reader = _pypdf.PdfReader(_io.BytesIO(file_bytes))
+    full_text = " ".join(page.extract_text() or "" for page in reader.pages)
     text_lower = full_text.lower()
 
     # --- Parse claims from text ---
@@ -225,8 +225,8 @@ async def parse_gst_certificate(gst_pdf: UploadFile = File(...)):
     Extracts GSTIN, legal name, status, validity, and filing flags.
     """
     file_bytes = await gst_pdf.read()
-    doc = _fitz.open(stream=file_bytes, filetype="pdf")
-    text = " ".join(page.get_text() for page in doc)
+    reader = _pypdf.PdfReader(_io.BytesIO(file_bytes))
+    text = " ".join(page.extract_text() or "" for page in reader.pages)
 
     result = {
         "document_type": "GST_REGISTRATION_CERTIFICATE",
@@ -300,8 +300,8 @@ async def parse_udyam_certificate(udyam_pdf: UploadFile = File(...)):
     Extracts Udyam number, enterprise name, classification, NIC code, and state.
     """
     file_bytes = await udyam_pdf.read()
-    doc = _fitz.open(stream=file_bytes, filetype="pdf")
-    text = " ".join(page.get_text() for page in doc)
+    reader = _pypdf.PdfReader(_io.BytesIO(file_bytes))
+    text = " ".join(page.extract_text() or "" for page in reader.pages)
 
     result = {
         "document_type": "UDYAM_REGISTRATION_CERTIFICATE",
@@ -369,8 +369,8 @@ async def parse_itr_certificate(itr_pdf: UploadFile = File(...)):
     Extracts PAN, Name, Assessment Year, Filing Date, and Acknowledgement Number.
     """
     file_bytes = await itr_pdf.read()
-    doc = _fitz.open(stream=file_bytes, filetype="pdf")
-    text = " ".join(page.get_text() for page in doc)
+    reader = _pypdf.PdfReader(_io.BytesIO(file_bytes))
+    text = " ".join(page.extract_text() or "" for page in reader.pages)
 
     result = {
         "document_type": "INCOME_TAX_RETURN_ACKNOWLEDGEMENT",
@@ -429,8 +429,8 @@ async def parse_mii_certificate(mii_pdf: UploadFile = File(...)):
     Extracts Local Content Percentage and Supplier Class.
     """
     file_bytes = await mii_pdf.read()
-    doc = _fitz.open(stream=file_bytes, filetype="pdf")
-    text = " ".join(page.get_text() for page in doc)
+    reader = _pypdf.PdfReader(_io.BytesIO(file_bytes))
+    text = " ".join(page.extract_text() or "" for page in reader.pages)
 
     result = {
         "document_type": "MII_LOCAL_CONTENT_DECLARATION",
@@ -848,8 +848,8 @@ if __name__ == "__main__":
 @app.post("/api/v1/bidders/parse-gstr3b")
 async def parse_gstr3b(gstr3b_pdf: UploadFile = File(...)):
     file_bytes = await gstr3b_pdf.read()
-    doc = _fitz.open(stream=file_bytes, filetype="pdf")
-    text = " ".join(page.get_text() for page in doc)
+    reader = _pypdf.PdfReader(_io.BytesIO(file_bytes))
+    text = " ".join(page.extract_text() or "" for page in reader.pages)
     
     entity_name = "Demo Bidder"
     m = _re.search(r'Legal Name:\s*(.*)', text)
@@ -874,8 +874,8 @@ async def parse_gstr3b(gstr3b_pdf: UploadFile = File(...)):
 @app.post("/api/v1/bidders/parse-debarment")
 async def parse_debarment(debarment_pdf: UploadFile = File(...)):
     file_bytes = await debarment_pdf.read()
-    doc = _fitz.open(stream=file_bytes, filetype="pdf")
-    text = " ".join(page.get_text() for page in doc)
+    reader = _pypdf.PdfReader(_io.BytesIO(file_bytes))
+    text = " ".join(page.extract_text() or "" for page in reader.pages)
     
     entity_name = "Demo Bidder"
     m = _re.search(r'We,\s*(.*?),\s*hereby declare', text, _re.IGNORECASE)

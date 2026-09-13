@@ -248,9 +248,10 @@ def process_batch_background(batch_id: str, zip_bytes: bytes):
 
                 try:
                     if doc_type == "gst":
-                        import pymupdf
-                        doc = pymupdf.open(stream=doc_bytes, filetype="pdf")
-                        text = " ".join(p.get_text() for p in doc)
+                        import io
+                        import pypdf
+                        reader = pypdf.PdfReader(io.BytesIO(doc_bytes))
+                        text = " ".join(p.extract_text() or "" for p in reader.pages)
                         m = re.search(r'Type of Registration[:\s]+(\w+)', text, re.IGNORECASE)
                         reg_type = m.group(1).title() if m else "Regular"
                         is_composition = "composition" in reg_type.lower()

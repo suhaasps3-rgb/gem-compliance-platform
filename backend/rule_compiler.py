@@ -15,7 +15,8 @@ class TenderRuleCompiler:
         Reads the actual uploaded PDF bytes, extracts text using PyMuPDF,
         and dynamically generates rules based on the document's contents.
         """
-        import fitz  # PyMuPDF
+        import io
+        import pypdf
         import re
         
         # 1. Physically read the PDF from memory

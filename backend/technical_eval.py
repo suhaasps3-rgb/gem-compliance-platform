@@ -4,7 +4,8 @@ Compares tender technical requirements against vendor-submitted specifications.
 """
 import re
 from typing import List, Dict, Any, Optional
-import pymupdf
+import io
+import pypdf
 
 
 OPERATOR_SYMBOLS = {
@@ -175,8 +176,8 @@ def extract_specs_from_pdf(pdf_bytes: bytes) -> List[Dict[str, Any]]:
     Returns a list of {parameter, vendor_value} dicts.
     """
     try:
-        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-        text = " ".join(page.get_text() for page in doc)
+        reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+        text = " ".join(page.extract_text() or "" for page in reader.pages)
     except Exception:
         return []
 
