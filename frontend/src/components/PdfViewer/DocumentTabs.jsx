@@ -41,36 +41,63 @@ export default function DocumentTabs() {
   ];
 
 
+  const activeAdditional = additionalTabs.find(t => t.id === selectedDocument);
+
   return (
-    <div className="border-b border-gray-200 mb-2">
-      <nav className="flex flex-wrap space-x-2">
-        {mainTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setSelectedDocument(tab.id)}
-            className={`px-3 py-2 text-sm font-medium focus:outline-none ${selectedDocument === tab.id ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className="border-b border-slate-200 mb-2 pb-1 shrink-0">
+      <nav className="flex flex-wrap items-center gap-1.5">
+        {mainTabs.map((tab) => {
+          const isActive = selectedDocument === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedDocument(tab.id)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 bg-white border border-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+
         <div className="relative">
           <button 
             onClick={() => setShowAdditional(!showAdditional)}
-            className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 focus:outline-none flex items-center gap-1"
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1.5 border ${
+              activeAdditional
+                ? 'bg-blue-50 text-blue-700 border-blue-300 shadow-xs'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+            }`}
           >
-            Additional Docs ▼
+            <span>{activeAdditional ? `Doc: ${activeAdditional.label}` : 'More Statutory Docs'}</span>
+            <svg className={`w-3 h-3 transition-transform ${showAdditional ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
+
           {showAdditional && (
-            <div className="absolute top-full left-0 mt-1 bg-white border rounded shadow-lg z-10 w-48 py-1">
-              {additionalTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => { setSelectedDocument(tab.id); setShowAdditional(false); }}
-                  className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${selectedDocument === tab.id ? 'text-blue-600 font-bold bg-blue-50' : 'text-gray-700'}`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 w-52 py-1 max-h-72 overflow-y-auto">
+              <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                Select Compliance Record
+              </div>
+              {additionalTabs.map((tab) => {
+                const isSelected = selectedDocument === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setSelectedDocument(tab.id); setShowAdditional(false); }}
+                    className={`block w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center justify-between ${
+                      isSelected ? 'text-blue-700 font-bold bg-blue-50' : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {isSelected && <span className="text-blue-600 text-xs">✓</span>}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

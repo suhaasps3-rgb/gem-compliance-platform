@@ -1,12 +1,9 @@
 {
   "framework": "vite",
-  "routes": [
+  "rewrites": [
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/((?!assets/|stamps/|.*\\..*).*)",
+      "destination": "/index.html"
     }
   ]
 }

@@ -92,11 +92,17 @@ function App() {
           <select 
             value={currentBidder} 
             onChange={(e) => setCurrentBidder(e.target.value)}
-            className="bg-slate-800 text-white text-sm rounded px-3 py-1.5 border border-slate-700 outline-none focus:border-blue-500"
+            className="bg-slate-800 text-white text-xs font-medium rounded px-3 py-1.5 border border-slate-700 outline-none focus:border-blue-500 cursor-pointer"
           >
-            <option value="bidder-acme-001">Bidder A: Acme Corp (Green)</option>
-            <option value="bidder-beta-002">Bidder B: Beta LLC (Yellow)</option>
-            <option value="bidder-gamma-003">Bidder C: Gamma Tech (Red)</option>
+            <option value="bidder-acme-001">Bidder A: Acme Corp (Compliant - Green)</option>
+            <option value="bidder-beta-002">Bidder B: Beta LLC (Debarred - Yellow)</option>
+            <option value="bidder-gamma-003">Bidder C: Gamma Tech (GST Inactive - Red)</option>
+            <option value="bidder-delta-004">Bidder D: Delta Dynamics (Cartel Signal)</option>
+            <option value="bidder-echo-005">Bidder E: Echo Enterprises (Unsigned Doc)</option>
+            <option value="bidder-foxtrot-006">Bidder F: Foxtrot Systems (Turnover Shortfall)</option>
+            <option value="bidder-indigo-010">Bidder J: Indigo Innovations (Startup/NSIC Exempt)</option>
+            <option value="bidder-juliet-011">Bidder K: Juliet Engineering (UDIN Certified)</option>
+            <option value="bidder-kilo-012">Bidder L: Kilo Systems (Tech Specs Fail)</option>
           </select>
 
           <div className="text-sm font-medium text-slate-300 bg-slate-800 px-3 py-1.5 rounded">

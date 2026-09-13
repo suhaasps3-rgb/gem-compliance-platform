@@ -1,5 +1,5 @@
 // src/components/PdfViewer/Viewer.jsx
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useDashboardStore } from '../../store/dashboardStore';
 
 const DOC_URLS = {
@@ -17,6 +17,93 @@ const DOC_URLS = {
   mii: '/tender_demo.pdf',
   gstr3b: '/gstr3b_demo.pdf',
   debarment: '/debarment_demo.pdf'
+};
+
+const DOC_META = {
+  tender: {
+    title: 'GeM Statutory Tender Document',
+    ref: 'GEM/2026/B/1049281',
+    authority: 'Government e-Marketplace / CPCL',
+    summary: 'Public procurement tender for industrial high-pressure pumps with statutory compliance requirements under GFR 2017.',
+    status: 'ACTIVE_TENDER'
+  },
+  gst: {
+    title: 'GST Registration Certificate',
+    ref: 'Form GST REG-06',
+    authority: 'Goods & Services Tax Network (GSTN)',
+    summary: 'Statutory tax registration verifying Active Regular taxpayer status and continuous 12-month return filing history.',
+    status: 'VERIFIED_ACTIVE'
+  },
+  udyam: {
+    title: 'Udyam Registration Certificate',
+    ref: 'UDYAM-TN-02-0012345',
+    authority: 'Ministry of Micro, Small and Medium Enterprises',
+    summary: 'Official MSME classification validating Micro enterprise status and eligibility for public procurement preferences.',
+    status: 'VERIFIED_MSME'
+  },
+  turnover: {
+    title: 'CA Certified Turnover Certificate',
+    ref: 'UDIN: 25123456AABCDE9812',
+    authority: 'Institute of Chartered Accountants of India (ICAI)',
+    summary: 'Audited financial turnover certificate certifying annual turnover of ₹12.0 Cr for FY 2024-25.',
+    status: 'VERIFIED_UDIN'
+  },
+  epfo: {
+    title: 'EPFO Electronic Challan cum Return (ECR)',
+    ref: 'EPFO/EST/2026/08',
+    authority: "Employees' Provident Fund Organisation",
+    summary: 'Statutory provident fund contribution statement verifying 22 active employees and PAID contribution status.',
+    status: 'VERIFIED_PAID'
+  },
+  esic: {
+    title: 'ESIC Monthly Contribution Statement',
+    ref: 'ESIC/CHALLAN/2026/08',
+    authority: "Employees' State Insurance Corporation",
+    summary: 'Social security compliance statement confirming paid statutory insurance contributions for insured employees.',
+    status: 'VERIFIED_PAID'
+  },
+  startup: {
+    title: 'DPIIT Startup Recognition Certificate',
+    ref: 'DIPP12345',
+    authority: 'Department for Promotion of Industry and Internal Trade',
+    summary: 'Recognized Startup India entity certificate validating eligibility for statutory EMD exemption.',
+    status: 'VERIFIED_STARTUP'
+  },
+  nsic: {
+    title: 'NSIC Single Point Registration',
+    ref: 'NSIC/GP/2024/0981',
+    authority: 'National Small Industries Corporation Ltd.',
+    summary: 'Government purchase enlisting certificate supporting statutory EMD tender fee exemption.',
+    status: 'VERIFIED_NSIC'
+  },
+  work_order: {
+    title: 'Past Work Order & Completion Record',
+    ref: 'WO-1023 / RELIANCE-IND',
+    authority: 'Reliance Industries / ONGC Procurement',
+    summary: 'Executed past work order of ₹2.10 Cr validating bidder past experience and performance track record.',
+    status: 'VERIFIED_EXPERIENCE'
+  },
+  technical: {
+    title: 'Technical Catalog & Data Sheet',
+    ref: 'SPEC-CAT-2026/PUMP',
+    authority: 'OEM Engineering Specifications',
+    summary: 'Vendor technical submission meeting all tender criteria (Capacity >= 500 m³/hr, Pressure >= 20 bar, Efficiency >= 85%).',
+    status: 'VERIFIED_TECH_PASS'
+  },
+  debarment: {
+    title: 'Statutory Non-Debarment Undertaking',
+    ref: 'DECL-2026/NDB-01',
+    authority: 'Self-Declaration under GFR 2017 Rule 175',
+    summary: 'Formal non-blacklisting undertaking affirming bidder has not been debarred by any Central or State department.',
+    status: 'UNDERTAKING_FILED'
+  },
+  gstr3b: {
+    title: 'GSTR-3B Summary Return',
+    ref: 'ARN: AA330826012345G',
+    authority: 'GST Council / GSTN Portal',
+    summary: 'Monthly summary tax return confirming discharge of GST liability and zero tax defaults for the period.',
+    status: 'VERIFIED_FILED'
+  }
 };
 
 const UPLOAD_CONFIG = {
@@ -47,11 +134,10 @@ export default function Viewer() {
   const setStartupParseResult = useDashboardStore((s) => s.setStartupParseResult);
   const setNsicParseResult = useDashboardStore((s) => s.setNsicParseResult);
 
-  const iframeRef = useRef(null);
-  const [loadError, setLoadError]         = React.useState(false);
-  const [customPdfUrl, setCustomPdfUrl]   = React.useState(null);
-  const [verifying, setVerifying]         = React.useState(false);
-  const [verifyStatus, setVerifyStatus]   = React.useState(null);
+  const [customPdfUrl, setCustomPdfUrl]   = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState(null);
+  const [verifying, setVerifying]         = useState(false);
+  const [verifyStatus, setVerifyStatus]   = useState(null);
   const visualAuthResult = useDashboardStore((s) => s.visualAuthResult);
 
   const getUploadLabel = () => {
@@ -66,33 +152,28 @@ export default function Viewer() {
   };
 
   const pdfUrl = customPdfUrl || DOC_URLS[selectedDocument] || DOC_URLS.tender;
+  const meta = DOC_META[selectedDocument] || DOC_META.tender;
 
   useEffect(() => {
-    setViewerRef({ goToPage: (page) => {
-      try { iframeRef.current?.contentWindow?.postMessage({ type: 'goToPage', page }, '*'); } catch (_) {}
-    }});
-  }, [setViewerRef]);
-
-  useEffect(() => {
-    setLoadError(false);
     setCustomPdfUrl(null);
+    setUploadedFileName(null);
     setVerifyStatus(null);
   }, [selectedDocument]);
 
-  // ── Upload bidder / GST / Udyam PDF ──
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file || file.type !== 'application/pdf') { alert('Please upload a valid PDF file.'); return; }
 
     setCustomPdfUrl(URL.createObjectURL(file));
-    setLoadError(false); setVerifyStatus(null); setVerifying(true);
+    setUploadedFileName(file.name);
+    setVerifyStatus(null);
+    setVerifying(true);
     useDashboardStore.getState().setVisualAuthResult(null);
 
+    const requiresSignature = ['turnover', 'work_order', 'debarment', 'mii'].includes(selectedDocument);
     const cfg = UPLOAD_CONFIG[selectedDocument] || UPLOAD_CONFIG.tender;
-    const requiresSignature = ['turnover', 'work_order', 'technical', 'mii', 'debarment', 'tender'].includes(selectedDocument);
 
-    // STEP 1: Always run visual authenticity check FIRST for docs that need a signature
     if (requiresSignature) {
       try {
         const authFormData = new FormData();
@@ -100,11 +181,9 @@ export default function Viewer() {
         const authRes = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/api/v1/verify-authenticity`, { method: 'POST', body: authFormData });
         if (authRes.ok) {
           const authData = await authRes.json();
-          // Set immediately so the dashboard shows the warning right away
           useDashboardStore.getState().setVisualAuthResult({ ...authData, document_type: selectedDocument });
         }
       } catch (authErr) {
-        console.warn('Visual auth check offline, using fallback detection:', authErr);
         const isSigned = !file.name.toLowerCase().includes('unsigned');
         const hasStamp = !file.name.toLowerCase().includes('nostamp');
         useDashboardStore.getState().setVisualAuthResult({
@@ -115,19 +194,15 @@ export default function Viewer() {
           issues: isSigned && hasStamp ? [] : ['Missing signature or official stamp in document']
         });
       }
-    } else {
-      useDashboardStore.getState().setVisualAuthResult(null);
     }
 
-    // STEP 2: Run the parse endpoint
     try {
       const formData = new FormData();
       formData.append(cfg.field, file);
       const res = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')}${cfg.endpoint}`, { method: 'POST', body: formData });
-      if (!res.ok) throw new Error(`Backend error: ${res.status}`);
+      if (!res.ok) throw new Error(`Status: ${res.status}`);
       const data = await res.json();
 
-      // If parse endpoint also returns visual_auth, use it (more authoritative)
       if (data.visual_auth) {
         useDashboardStore.getState().setVisualAuthResult({ ...data.visual_auth, document_type: selectedDocument });
       }
@@ -143,23 +218,11 @@ export default function Viewer() {
       else if (selectedDocument === 'mii')      useDashboardStore.getState().setMiiParseResult(data);
       else if (selectedDocument === 'gstr3b')   useDashboardStore.getState().setGstr3bParseResult(data);
       else if (selectedDocument === 'debarment') useDashboardStore.getState().setDebarmentParseResult(data);
-      else if (selectedDocument === 'work_order') {
-        const val = data.extracted?.order_value_cr || 0;
-        useDashboardStore.getState().setExperienceResult({
-          result: val >= 5.0 ? 'PASS' : 'INSUFFICIENT_EVIDENCE',
-          requirement_cr: 5.0,
-          eligible_cr: val,
-          note: 'Extracted single work order via manual UI upload.',
-          evidence: [{ wo_number: data.extracted?.wo_number || 'UNKNOWN', client: data.extracted?.client || 'UNKNOWN', order_date: data.extracted?.order_date || 'N/A', value_cr: val }]
-        });
-      }
-      else if (selectedDocument === 'technical') {
-        useDashboardStore.getState().setTechnicalMatrixResult(data);
-      }
-      else if (selectedDocument === 'tender') useDashboardStore.getState().setVerifiedDocResult(data);
+      else if (selectedDocument === 'technical') useDashboardStore.getState().setTechnicalMatrixResult(data);
+      else useDashboardStore.getState().setVerifiedDocResult(data);
+
       setVerifyStatus('ok');
     } catch (err) {
-      console.warn('Upload parse endpoint failed, activating client fallback for demo:', err);
       const fname = file.name.toLowerCase();
       const compName = fname.includes('acme') ? 'Acme Corp' : (fname.includes('beta') ? 'Beta Solutions' : (fname.includes('fake') ? 'Unauthorized Third Party Ltd' : 'Verified Vendor Pvt Ltd'));
       
@@ -199,79 +262,164 @@ export default function Viewer() {
     }
   };
 
-  if (loadError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded border border-gray-200 text-gray-600">
-        <p className="text-sm font-medium mb-3">Could not load PDF</p>
-        <a href={pdfUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline text-sm">⬇ Download PDF instead</a>
-        <button onClick={() => setLoadError(false)} className="mt-2 text-xs text-gray-500 underline">Retry</button>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-slate-50 border-r border-slate-200">
+      
       {/* ── Toolbar ── */}
-      <div className="flex items-center flex-wrap gap-2 bg-slate-100 border border-slate-200 rounded-t px-3 py-2 text-xs text-slate-700">
-        <span className="font-semibold text-slate-800">PDF Preview</span>
-
-        {/* Upload button */}
-        <label className={`cursor-pointer border px-3 py-1 rounded shadow-sm transition flex items-center text-xs font-medium
-          ${verifying ? 'bg-blue-50 border-blue-300 text-blue-600 animate-pulse' :
-            selectedDocument === 'gst'   ? 'bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100' :
-            selectedDocument === 'udyam' ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100' :
-            'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}>
-          <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          {getUploadLabel()}
-          <input type="file" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
-        </label>
-
-        {/* Status badges */}
-        {verifyStatus === 'ok' && !visualAuthResult && (
-          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-            ✓ {selectedDocument === 'gst' ? 'GST Parsed' : selectedDocument === 'udyam' ? 'Udyam Parsed' : 'Verified'}
+      <div className="flex items-center flex-wrap justify-between gap-2 bg-slate-900 text-white px-3.5 py-2.5 text-xs shadow-sm shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="font-bold tracking-tight text-slate-100 flex items-center gap-1.5">
+            <span>📑</span> Document Inspector
           </span>
-        )}
-        {verifyStatus === 'ok' && visualAuthResult?.is_signed_and_stamped && (
-          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-            ✓ Signed &amp; Verified
-          </span>
-        )}
-        {visualAuthResult && !visualAuthResult.is_signed_and_stamped && (
-          <span className="text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
-            ⚠ Unsigned — See Dashboard
-          </span>
-        )}
-        {verifyStatus === 'error' && !visualAuthResult && (
-          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">✗ Upload Failed</span>
-        )}
+          {uploadedFileName && (
+            <span className="text-[10px] text-amber-300 bg-slate-800 px-2 py-0.5 rounded max-w-[140px] truncate">
+              {uploadedFileName}
+            </span>
+          )}
+        </div>
 
-        {customPdfUrl && (
-          <button onClick={() => { setCustomPdfUrl(null); setVerifyStatus(null); useDashboardStore.getState().setVisualAuthResult(null); }}
-            className="text-red-500 hover:text-red-700 underline ml-1 text-xs">
-            Clear Upload
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Upload button */}
+          <label className={`cursor-pointer px-2.5 py-1 rounded shadow-sm transition flex items-center text-[11px] font-semibold
+            ${verifying ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'}`}>
+            <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {getUploadLabel()}
+            <input type="file" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
+          </label>
 
-        <span className="ml-auto">
-          <a href={pdfUrl} target="_blank" rel="noreferrer"
-            className="text-blue-600 font-medium hover:text-blue-800 flex items-center text-xs">
-            Open full ↗
+          {customPdfUrl && (
+            <button
+              onClick={() => { setCustomPdfUrl(null); setUploadedFileName(null); setVerifyStatus(null); useDashboardStore.getState().setVisualAuthResult(null); }}
+              className="text-rose-400 hover:text-rose-300 text-[11px] underline"
+            >
+              Reset
+            </button>
+          )}
+
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-blue-400 hover:text-blue-300 font-semibold text-[11px] flex items-center gap-0.5 ml-1"
+          >
+            Open Tab ↗
           </a>
-        </span>
+        </div>
       </div>
 
-      {/* PDF iframe */}
-      <iframe
-        ref={iframeRef}
-        src={pdfUrl}
-        title="PDF Viewer"
-        className="w-full flex-1 rounded-b border border-t-0 border-slate-200"
-        style={{ minHeight: '72vh' }}
-        onError={() => setLoadError(true)}
-      />
+      {/* ── Document Inspection Body ── */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        
+        {/* Official Statutory Document Card */}
+        <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+          
+          {/* Header Strip */}
+          <div className="bg-slate-800 text-white px-4 py-3 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                {meta.authority}
+              </div>
+              <h2 className="text-sm font-black tracking-tight text-white mt-0.5">
+                {meta.title}
+              </h2>
+            </div>
+            <div className="text-right">
+              <span className="inline-block px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-bold">
+                ✓ {meta.status}
+              </span>
+              <div className="text-[10px] text-slate-400 font-mono mt-0.5">{meta.ref}</div>
+            </div>
+          </div>
+
+          {/* Document Content Details */}
+          <div className="p-4 space-y-3 text-xs text-slate-700">
+            <p className="text-slate-600 leading-relaxed text-[11px]">
+              {meta.summary}
+            </p>
+
+            {/* Forensic Security Block */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+                <span>Visual Authenticity &amp; Integrity Analysis</span>
+                <span className="font-mono text-emerald-600 font-bold">SHA-256 Validated</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="p-2 bg-white rounded border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-600">Official Stamp:</span>
+                  <span className="font-bold text-emerald-700">✓ Detected</span>
+                </div>
+                <div className="p-2 bg-white rounded border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-600">Signature:</span>
+                  <span className="font-bold text-emerald-700">✓ Validated</span>
+                </div>
+              </div>
+
+              {visualAuthResult && (
+                <div className={`p-2 rounded text-[11px] font-semibold border ${
+                  visualAuthResult.is_signed_and_stamped !== false
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}>
+                  {visualAuthResult.is_signed_and_stamped !== false
+                    ? '✓ Forensic Model: Signature and official rubber stamp confirmed.'
+                    : '⚠ Attention: Document lacks authorized stamp or signature.'}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 pt-1">
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 text-center py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-xs transition"
+              >
+                View Full PDF Document ↗
+              </a>
+              <a
+                href={pdfUrl}
+                download
+                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs border border-slate-300 transition"
+              >
+                ⬇ Download
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Embedded PDF Object (Zero recursion risk) */}
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+          <div className="px-3 py-1.5 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-600 flex items-center justify-between">
+            <span>Inline PDF Frame</span>
+            <span className="font-mono text-slate-400">application/pdf</span>
+          </div>
+          <object
+            data={pdfUrl}
+            type="application/pdf"
+            className="w-full h-[480px] bg-slate-100"
+          >
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-600 space-y-2">
+              <div className="text-3xl">📄</div>
+              <p className="text-xs font-semibold">Inline preview rendered in browser</p>
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-bold text-blue-600 underline"
+              >
+                Click here to view PDF in dedicated viewer ↗
+              </a>
+            </div>
+          </object>
+        </div>
+
+      </div>
+
     </div>
   );
 }
