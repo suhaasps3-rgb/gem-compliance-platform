@@ -1,0 +1,5 @@
+backend/
+*.py
+*.pdf
+NotoSans*.ttf
+batch_demo*
