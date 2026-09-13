@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 
 export const useDashboardStore = create((set) => ({
+  // Selected Bidder
+  currentBidder: 'bidder-acme-001',
+  setCurrentBidder: (bidderId) => set({ currentBidder: bidderId }),
+
   // Active document in Viewer
   selectedDocument: 'tender',
   setSelectedDocument: (docId) => set({ selectedDocument: docId }),

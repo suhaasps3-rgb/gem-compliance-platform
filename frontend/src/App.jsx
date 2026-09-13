@@ -91,7 +91,13 @@ function App() {
 
           <select 
             value={currentBidder} 
-            onChange={(e) => setCurrentBidder(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setCurrentBidder(val);
+              useDashboardStore.getState().setCurrentBidder(val);
+              useDashboardStore.getState().clearAllDocs();
+              useDashboardStore.getState().clearComplianceBlock();
+            }}
             className="bg-slate-800 text-white text-xs font-medium rounded px-3 py-1.5 border border-slate-700 outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="bidder-acme-001">Bidder A: Acme Corp (Compliant - Green)</option>
@@ -116,7 +122,7 @@ function App() {
         left={
           <div className="flex flex-col h-full p-3">
             <DocumentTabs />
-            <Viewer />
+            <Viewer currentBidder={currentBidder} />
           </div>
         }
         right={<Dashboard bidderId={currentBidder} />}
