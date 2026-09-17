@@ -22,7 +22,10 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
   } = useDashboardStore();
 
   // ── Forgery Mismatch Detection ──
-  const normalize = (name) => name?.toLowerCase().replace(/ private limited/g, '').replace(/ pvt ltd/g, '').replace(/ ltd/g, '').replace(/ corp/g, '').replace(/ llc/g, '').trim() || '';
+  const normalize = (name) => {
+    if (!name) return '';
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/(privatelimited|pvtltd|ltd|limited|llc|corp|corporation|inc|industries|enterprises|solutions|technologies|systems|trade|infra|infrastructure|tech)/g, '');
+  };
   const checkMismatch = (extractedName) => {
     if (!bidderDetails?.name || !extractedName) return false;
     return !normalize(extractedName).includes(normalize(bidderDetails.name)) && !normalize(bidderDetails.name).includes(normalize(extractedName));

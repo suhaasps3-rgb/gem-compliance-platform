@@ -4,6 +4,7 @@ import DocumentTabs from './components/PdfViewer/DocumentTabs';
 import Viewer from './components/PdfViewer/Viewer';
 import Dashboard from './Dashboard';
 import TenderConfigurator from './TenderConfigurator';
+import { useDashboardStore } from './store/dashboardStore';
 
 import BatchProcessor from './components/BatchProcessor';
 

@@ -70,8 +70,12 @@ export default function Dashboard({ bidderId }) {
 
   // Detect document identity mismatch (e.g. Bidder A doc uploaded on Bidder B dashboard)
   useEffect(() => {
-    const bidderName = (data?.bidder_details?.name || '').toLowerCase().replace(/\s+private\s+limited|pvt\.?\s*ltd\.?|\s+llc|\s+limited/gi, '').trim();
-    const docCompany = (turnoverParseResult?.extracted?.company_name || '').toLowerCase().replace(/\s+private\s+limited|pvt\.?\s*ltd\.?|\s+llc|\s+limited/gi, '').trim();
+    const normalize = (name) => {
+    if (!name) return '';
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/(privatelimited|pvtltd|ltd|limited|llc|corp|corporation|inc|industries|enterprises|solutions|technologies|systems|trade|infra|infrastructure|tech)/g, '');
+  };
+    const bidderName = normalize(data?.bidder_details?.name);
+    const docCompany = normalize(turnoverParseResult?.extracted?.company_name);
     const isFromApi = turnoverParseResult?.source === 'MOCK_DATASET';
     if (!isFromApi && docCompany && bidderName && !docCompany.includes(bidderName) && !bidderName.includes(docCompany)) {
       useDashboardStore.getState().setComplianceBlockedReason(

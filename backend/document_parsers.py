@@ -331,9 +331,9 @@ def parse_turnover_ca(pdf_bytes: bytes) -> dict:
     }
 
     # Company Name — PDF has "Name of Entity (Auditee)\nACME CORP PRIVATE LIMITED"
-    m = re.search(r'Name of Entity[^\n]*\n([A-Z][A-Z\s&]+(?:LIMITED|LLP|PRIVATE|CORP|CORPORATION|INC|INDUSTRIES|ENTERPRISES|SOLUTIONS|TECHNOLOGIES|SYSTEMS))', text, re.IGNORECASE)
+    m = re.search(r'Name of Entity[^\n]*\n([A-Z][A-Z\s&]+(?:LIMITED|LLP|PRIVATE|CORP|CORPORATION|INC|INDUSTRIES|ENTERPRISES|SOLUTIONS|TECHNOLOGIES|SYSTEMS|LLC))', text, re.IGNORECASE)
     if not m:
-        m = re.search(r'(?:Name of Company|Company Name|M/s)[:\s]+([A-Za-z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|LLP|Private|Corp|Corporation|Inc|Industries|Enterprises|Solutions|Technologies))', text, re.IGNORECASE)
+        m = re.search(r'(?:Name of Company|Company Name|M/s)[:\s]+([A-Za-z][A-Za-z\s&\.]+(?:Ltd|Limited|Pvt|LLP|Private|Corp|Corporation|Inc|Industries|Enterprises|Solutions|Technologies|LLC))', text, re.IGNORECASE)
     if not m:
         m = re.search(r'(?:books of accounts? of|certify that|on behalf of)\s+([A-Z][A-Za-z\s&\.]+?)(?:\.|,|\n|for the|Financial|FY)', text, re.IGNORECASE)
     if m:

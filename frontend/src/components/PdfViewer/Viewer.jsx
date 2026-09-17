@@ -136,7 +136,8 @@ export default function Viewer({ currentBidder }) {
   const setStartupParseResult = useDashboardStore((s) => s.setStartupParseResult);
   const setNsicParseResult = useDashboardStore((s) => s.setNsicParseResult);
 
-  const currentBidderId = currentBidder || useDashboardStore((s) => s.currentBidder) || 'bidder-acme-001';
+  const storeCurrentBidder = useDashboardStore((s) => s.currentBidder);
+  const currentBidderId = currentBidder || storeCurrentBidder || 'bidder-acme-001';
   const currentBidderObj = mockData.bidders?.find((b) => b.id === currentBidderId) || mockData.bidders?.[0] || { name: 'Acme Corp' };
   const currentBidderName = currentBidderObj.name;
 
