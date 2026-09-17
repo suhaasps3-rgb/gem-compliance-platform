@@ -181,7 +181,7 @@
       "id": "bidder-gamma-003",
       "name": "Gamma Technologies Pvt Ltd",
       "scenario": "Red (Critical Fraud)",
-      "expected_status": "NON_COMPLIANT",
+      "expected_status": "REJECTED",
       "notes": "Entity name mismatch (Gamma Tech vs Gamma Technologies Pvt Ltd)",
       "claims": {
         "pan": "BKKPA1234F",

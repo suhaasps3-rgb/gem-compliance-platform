@@ -36,11 +36,11 @@ export default function BatchProcessor({ onClose, onSelectBidder }) {
         score = 85; riskLevel = 'LOW'; outcome = 'VERIFIED_COMPLIANT'; eligibleCr = 7.35;
         highlight = 'Active regular GST, cleared non-debarment, valid CA turnover certificate.';
       } else if (b.id === 'bidder-beta-002') {
-        score = 60; riskLevel = 'HIGH'; outcome = 'NEEDS_REVIEW'; eligibleCr = 6.20;
+        score = 50; riskLevel = 'HIGH'; outcome = 'NEEDS_REVIEW'; eligibleCr = 6.20;
         highlight = 'Historical Central Debarment period requires officer scrutiny.';
       } else if (b.id === 'bidder-gamma-003') {
-        score = 28; riskLevel = 'CRITICAL'; outcome = 'DISQUALIFIED'; eligibleCr = 3.10;
-        highlight = 'GST registration CANCELLED on GSTN; turnover shortfall (< ₹5.0 Cr).';
+        score = 0; riskLevel = 'CRITICAL'; outcome = 'DISQUALIFIED'; eligibleCr = 3.10;
+        highlight = 'GST registration CANCELLED on GSTN; turnover shortfall (< ₹15.0 Cr).';
       } else if (b.id === 'bidder-delta-004') {
         score = 52; riskLevel = 'HIGH'; outcome = 'NEEDS_REVIEW'; eligibleCr = 5.80;
         highlight = 'Cartel Signal: Shared director DIN99991111 with Acme Corp.';
