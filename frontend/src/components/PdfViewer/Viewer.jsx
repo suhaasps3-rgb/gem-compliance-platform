@@ -158,14 +158,24 @@ export default function Viewer({ currentBidder }) {
     return labels[selectedDocument] || 'Upload Document';
   };
 
-  const pdfUrl = customPdfUrl || DOC_URLS[selectedDocument] || DOC_URLS.tender;
+  
+  let basePdfUrl = DOC_URLS[selectedDocument] || DOC_URLS.tender;
+  if (selectedDocument === 'turnover') {
+    if (currentBidderId.includes('acme')) basePdfUrl = '/ca_turnover_acme.pdf';
+    else if (currentBidderId.includes('beta')) basePdfUrl = '/ca_turnover_beta.pdf';
+    else if (currentBidderId.includes('gamma')) basePdfUrl = '/ca_turnover_gamma.pdf';
+  }
+  const pdfUrl = customPdfUrl || basePdfUrl;
+
   const meta = DOC_META[selectedDocument] || DOC_META.tender;
+
 
   useEffect(() => {
     setCustomPdfUrl(null);
     setUploadedFileName(null);
     setVerifyStatus(null);
-  }, [selectedDocument]);
+  }, [selectedDocument, currentBidderId]);
+
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
