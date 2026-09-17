@@ -565,23 +565,27 @@ export default function Viewer({ currentBidder }) {
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 bg-white rounded border border-slate-200 flex items-center justify-between">
                   <span className="text-slate-600">Official Stamp:</span>
-                  <span className="font-bold text-emerald-700">✓ Detected</span>
+                  <span className={`font-bold ${visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.stamp_detected === false) ? 'text-amber-600' : 'text-emerald-700'}`}>
+                    {visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.stamp_detected === false) ? '⚠️ Missing' : '✓ Detected'}
+                  </span>
                 </div>
                 <div className="p-2 bg-white rounded border border-slate-200 flex items-center justify-between">
                   <span className="text-slate-600">Signature:</span>
-                  <span className="font-bold text-emerald-700">✓ Validated</span>
+                  <span className={`font-bold ${visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false) ? 'text-amber-600' : 'text-emerald-700'}`}>
+                    {visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false) ? '⚠️ Missing' : '✓ Validated'}
+                  </span>
                 </div>
               </div>
 
               {visualAuthResult && (
                 <div className={`p-2 rounded text-[11px] font-semibold border ${
-                  visualAuthResult.is_signed_and_stamped !== false
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                  (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false || visualAuthResult.stamp_detected === false)
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
                 }`}>
-                  {visualAuthResult.is_signed_and_stamped !== false
-                    ? '✓ Forensic Model: Signature and official rubber stamp confirmed.'
-                    : '⚠ Attention: Document lacks authorized stamp or signature.'}
+                  {(visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false || visualAuthResult.stamp_detected === false)
+                    ? '⚠️ Attention: Document lacks authorized stamp or signature.'
+                    : '✓ Forensic Model: Signature and official rubber stamp confirmed.'}
                 </div>
               )}
             </div>
