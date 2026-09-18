@@ -16,7 +16,7 @@ class TenderRuleCompiler:
         and dynamically generates rules based on the document's contents.
         """
         import io
-        import pypdf
+        import pymupdf as fitz
         import re
         
         # 1. Physically read the PDF from memory

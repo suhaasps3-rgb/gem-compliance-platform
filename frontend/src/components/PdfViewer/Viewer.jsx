@@ -147,6 +147,8 @@ export default function Viewer({ currentBidder }) {
   const [verifyStatus, setVerifyStatus]   = useState(null);
   const visualAuthResult = useDashboardStore((s) => s.visualAuthResult);
 
+  const requiresSignature = ['turnover', 'work_order', 'debarment', 'mii'].includes(selectedDocument);
+
   const getUploadLabel = () => {
     if (verifying) return 'Parsing...';
     const labels = {
@@ -188,7 +190,6 @@ export default function Viewer({ currentBidder }) {
     setVerifying(true);
     useDashboardStore.getState().setVisualAuthResult(null);
 
-    const requiresSignature = ['turnover', 'work_order', 'debarment', 'mii'].includes(selectedDocument);
     const cfg = UPLOAD_CONFIG[selectedDocument] || UPLOAD_CONFIG.tender;
 
     if (requiresSignature) {
@@ -555,8 +556,10 @@ export default function Viewer({ currentBidder }) {
               {meta.summary}
             </p>
 
-            {/* Forensic Security Block */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+            {requiresSignature && (
+              <React.Fragment>
+              {/* Forensic Security Block */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
               <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center justify-between">
                 <span>Visual Authenticity &amp; Integrity Analysis</span>
                 <span className="font-mono text-emerald-600 font-bold">SHA-256 Validated</span>
@@ -588,7 +591,9 @@ export default function Viewer({ currentBidder }) {
                     : '✓ Forensic Model: Signature and official rubber stamp confirmed.'}
                 </div>
               )}
-            </div>
+              </div>
+              </React.Fragment>
+            )}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 pt-1">
