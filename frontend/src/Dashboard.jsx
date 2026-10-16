@@ -27,7 +27,6 @@ export default function Dashboard({ bidderId }) {
   const [poDecision, setPoDecision] = useState(null);
 
   useEffect(() => {
-    clearAllDocs(); // Reset all uploaded docs when switching companies
     // If a doc was uploaded, don't re-fetch — use that result instead
     if (verifiedDocResult) return;
 
