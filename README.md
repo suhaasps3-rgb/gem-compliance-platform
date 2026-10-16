@@ -27,7 +27,7 @@ Government procurement in India involves verifying dozens of documents per bidde
 ## Features
 
 ### Document Intelligence
-- **AI Document Parsing** — Forensic PDF analysis extracts structured data from GST certificates, Udyam registrations, CA turnover certificates, work orders, EPFO, ESIC, NSIC, ITR, and more — no third-party OCR API required
+- **AI Document Parsing (Prototype using sample data)** — Forensic PDF analysis extracts structured data from GST certificates, Udyam registrations, CA turnover certificates, work orders, EPFO, ESIC, NSIC, and ITR, cross-referencing claims against simulated government registries (GSTN, MCA21, Udyam, Debarment) with no third-party OCR API required
 - **Visual Authenticity Check** — Detects missing authorized signatures and rubber stamps; triggers a compliance penalty and dashboard alert
 - **UDIN Verification** — Validates CA UDIN format and flags missing or malformed identifiers
 
