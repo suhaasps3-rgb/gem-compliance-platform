@@ -52,7 +52,7 @@ export default function SectionNav({ sections }) {
       aria-label="Jump to section"
       className="sticky top-0 z-20 -mx-4 md:-mx-6 px-4 md:px-6 bg-ground border-b border-slate-200"
     >
-      <ul className="flex gap-4 overflow-x-auto">
+      <ul className="flex gap-4 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {present.map((s) => (
           <li key={s.id} className="shrink-0">
             <button
