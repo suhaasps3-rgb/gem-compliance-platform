@@ -17,6 +17,8 @@ from experience_engine import validate_experience
 from technical_eval import evaluate_technical_specs, extract_specs_from_pdf
 from document_parsers import parse_work_order, parse_turnover_ca, parse_epfo, parse_esic, parse_startup, parse_nsic, _extract_text
 from visual_authenticity import verify_signature_and_stamp
+import tender_store
+from verification_status import UNVERIFIED
 
 STANDARD_TENDER_SPECS = [
     {"parameter": "Pump Capacity", "operator": "gte", "required_value": 500, "unit": "m³/hr"},
@@ -283,9 +285,10 @@ async def parse_gst_certificate(gst_pdf: UploadFile = File(...)):
                 else "In production: call GSTN API with extracted GSTIN for live filing status"
     }
 
-    # Mock GSTR Returns
-    result["extracted"]["gstr_filing_status"] = "FILED"
-    result["extracted"]["pending_returns"] = 0
+    # Filing status cannot be read from a registration certificate. Without a live GSTN lookup it is
+    # UNVERIFIED, never FILED. Only an explicit defaulter marker in the document changes it.
+    result["extracted"]["gstr_filing_status"] = UNVERIFIED
+    result["extracted"]["pending_returns"] = None
     if "DEFAULTER" in text.upper() or "NON_FILER" in text.upper():
         result["extracted"]["gstr_filing_status"] = "PENDING"
         result["extracted"]["pending_returns"] = 3
@@ -472,6 +475,37 @@ async def parse_mii_certificate(mii_pdf: UploadFile = File(...)):
     
     return result
 
+class TenderRecord(BaseModel):
+    id: str
+    title: Optional[str] = None
+    closing_date: str            # YYYY-MM-DD
+    criteria: dict = {}
+    required_documents: List[str] = []
+
+
+@app.get("/api/v1/tenders")
+async def list_tenders():
+    return {"tenders": tender_store.list_tenders()}
+
+
+@app.get("/api/v1/tenders/{tender_id}")
+async def get_tender(tender_id: str):
+    tender = tender_store.get_tender(tender_id)
+    if not tender:
+        raise HTTPException(status_code=404, detail="Tender not found")
+    return tender
+
+
+@app.put("/api/v1/tenders/{tender_id}")
+async def put_tender(tender_id: str, body: TenderRecord):
+    if body.id != tender_id:
+        raise HTTPException(status_code=400, detail="id in body must match the URL")
+    try:
+        return tender_store.upsert_tender(body.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
 @app.get("/api/v1/tenders/{tender_id}/documents")
 async def get_tender_documents(tender_id: str):
     """Return URLs for Tender, GST, and Udyam PDFs (mocked)."""
@@ -520,7 +554,7 @@ async def verify_bidder(bidder_id: str, tender_id: str):
     if not bidder_data:
         raise HTTPException(status_code=404, detail="Bidder not found in mock data")
 
-    engine = EvidenceGraphEngine(bidder_data)
+    engine = EvidenceGraphEngine(bidder_data, tender_id=tender_id)
     engine.build_graph()
     results = engine.resolve_contradictions()
     
@@ -711,14 +745,9 @@ async def parse_turnover_doc(turnover_pdf: UploadFile = File(...)):
 async def parse_technical_doc(tech_pdf: UploadFile = File(...)):
     file_bytes = await tech_pdf.read()
     v_specs = extract_specs_from_pdf(file_bytes)
-    if not v_specs:
-        v_specs = [
-            {"parameter": "Pump Capacity", "vendor_value": 520},
-            {"parameter": "Pressure", "vendor_value": 22},
-            {"parameter": "Efficiency", "vendor_value": 91},
-            {"parameter": "Voltage", "vendor_value": 415}
-        ]
-    return evaluate_technical_specs(STANDARD_TENDER_SPECS, v_specs)
+    # If nothing could be read from the PDF every parameter is reported as MISSING (overall
+    # INCOMPLETE). It must never fall back to a set of passing values.
+    return evaluate_technical_specs(STANDARD_TENDER_SPECS, v_specs or [])
 
 @app.post("/api/v1/bidders/validate-experience")
 async def validate_bidder_experience(

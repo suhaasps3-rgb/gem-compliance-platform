@@ -1,5 +1,407 @@
 @import "tailwindcss";
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+/*
+ * SATARK design tokens: "achromatic ledger".
+ * The chrome carries no colour. Colour is reserved for three jobs:
+ *   1. a verdict (pass / fail / needs review) -> green, red, amber, always as a pale pill with dark text
+ *   2. the one data hue (--color-data) on the main data element, e.g. evidence confidence
+ *   3. nothing else.
+ * Redefining the palette here re-skins every existing slate-/blue-/emerald-/red- utility in the app,
+ * so the components keep their markup and only the look changes.
+ */
+@theme {
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Weights: 400 / 500 for text, 700 only where a class asks for it explicitly (money, the score). */
+  --font-weight-semibold: 500;
+  --font-weight-bold: 500;
+  --font-weight-extrabold: 500;
+  --font-weight-black: 500;
+
+  /* Radii: tight pair (card 8, control 6, chip 4). */
+  --radius-xs: 4px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
+
+  /* Nothing at rest casts a shadow. Only floating things (menus, dialogs) keep one. */
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 0 #0000;
+  --shadow-xl: 0 12px 32px rgb(10 10 10 / 0.14);
+  --shadow-2xl: 0 16px 40px rgb(10 10 10 / 0.18);
+  --inset-shadow-sm: 0 0 #0000;
+
+  /* Named roles */
+  --color-ground: #edf1f7;        /* page ground, a cool blue-grey */
+  --color-navy: #0f2747;          /* the brand colour: top bar, verdict hero, primary action */
+  --color-navy-2: #1a3a66;        /* hover and raised states on navy */
+  --color-sheet: #ffffff;         /* cards and sheets */
+  --color-ink: #0a0a0a;           /* text and the one primary action */
+  --color-data: #1d5fbf;          /* the single data hue */
+  --color-data-soft: #e8f0fb;
+
+  /* Neutrals. 400 and up are all >= 4.5:1 on white so they can carry words. */
+  --color-slate-50: #f7f8fa;
+  --color-slate-100: #f0f2f5;
+  --color-slate-200: #e3e6ea;
+  --color-slate-300: #d0d4da;
+  --color-slate-400: #6b6f76;
+  --color-slate-500: #5c6068;
+  --color-slate-600: #474b52;
+  --color-slate-700: #33363c;
+  --color-slate-800: #1f2125;
+  --color-slate-900: #0a0a0a;
+  --color-slate-950: #050505;
+  --color-gray-50: #f7f8fa;
+  --color-gray-100: #f0f2f5;
+  --color-gray-200: #e3e6ea;
+  --color-gray-300: #d0d4da;
+  --color-gray-400: #6b6f76;
+  --color-gray-500: #5c6068;
+  --color-gray-600: #474b52;
+  --color-gray-700: #33363c;
+  --color-gray-800: #1f2125;
+  --color-gray-900: #0a0a0a;
+
+  /* Blue is the data hue, nothing else. Chrome that used blue now uses ink (see components). */
+  --color-blue-50: #eef4fc;
+  --color-blue-100: #e8f0fb;
+  --color-blue-200: #cddcf3;
+  --color-blue-300: #9fbbe6;
+  --color-blue-400: #5b8bd3;
+  --color-blue-500: #1d5fbf;
+  --color-blue-600: #1d5fbf;
+  --color-blue-700: #174d9a;
+  --color-blue-800: #123c78;
+  --color-blue-900: #0d2b57;
+
+  /* Purple and indigo were decoration; they now resolve to the ink family. */
+  --color-purple-50: #f2f4f7;
+  --color-purple-100: #e9ecf0;
+  --color-purple-200: #d7dbe1;
+  --color-purple-300: #b8bec7;
+  --color-purple-400: #6b6f76;
+  --color-purple-500: #33363c;
+  --color-purple-600: #141414;
+  --color-purple-700: #0a0a0a;
+  --color-purple-800: #0a0a0a;
+  --color-purple-900: #0a0a0a;
+  --color-indigo-50: #f2f4f7;
+  --color-indigo-100: #e9ecf0;
+  --color-indigo-200: #d7dbe1;
+  --color-indigo-500: #33363c;
+  --color-indigo-600: #141414;
+  --color-indigo-700: #33363c;
+
+  /* Positive */
+  --color-emerald-50: #f1faf4;
+  --color-emerald-100: #dcfae5;
+  --color-emerald-200: #b4e6c4;
+  --color-emerald-300: #86d3a0;
+  --color-emerald-400: #4fb577;
+  --color-emerald-500: #2e7d32;
+  --color-emerald-600: #2e7d32;
+  --color-emerald-700: #1f6a2a;
+  --color-emerald-800: #14501f;
+  --color-emerald-900: #04250e;
+  --color-green-50: #f1faf4;
+  --color-green-100: #dcfae5;
+  --color-green-200: #b4e6c4;
+  --color-green-500: #2e7d32;
+  --color-green-600: #2e7d32;
+  --color-green-700: #1f6a2a;
+  --color-green-800: #14501f;
+
+  /* Negative */
+  --color-red-50: #fff4f2;
+  --color-red-100: #ffedea;
+  --color-red-200: #f7cbc6;
+  --color-red-300: #ee9f97;
+  --color-red-400: #de6a63;
+  --color-red-500: #c4242a;
+  --color-red-600: #c4242a;
+  --color-red-700: #9d1c21;
+  --color-red-800: #831c1e;
+  --color-red-900: #5c1316;
+  --color-rose-50: #fff4f2;
+  --color-rose-100: #ffedea;
+  --color-rose-200: #f7cbc6;
+  --color-rose-500: #c4242a;
+  --color-rose-600: #c4242a;
+  --color-rose-700: #9d1c21;
+
+  /* Needs review. Amber, orange and yellow all mean the same thing here. */
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #e9c04a;
+  --color-amber-400: #c98a14;
+  --color-amber-500: #b45309;
+  --color-amber-600: #a2470b;
+  --color-amber-700: #92400e;
+  --color-amber-800: #78350f;
+  --color-amber-900: #5c2a0c;
+  --color-orange-50: #fffbeb;
+  --color-orange-100: #fef3c7;
+  --color-orange-200: #fde68a;
+  --color-orange-500: #b45309;
+  --color-orange-600: #a2470b;
+  --color-orange-700: #92400e;
+  --color-orange-800: #78350f;
+  --color-yellow-50: #fffbeb;
+  --color-yellow-100: #fef3c7;
+  --color-yellow-200: #fde68a;
+  --color-yellow-400: #c98a14;
+  --color-yellow-500: #b45309;
+  --color-yellow-600: #a2470b;
+  --color-yellow-700: #92400e;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Every figure that can change lines up digit for digit. */
+  table,
+  td,
+  th,
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  td.num,
+  th.num {
+    text-align: right;
+  }
+
+  /* Visible keyboard focus everywhere. */
+  :where(a, button, select, input, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-data);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled),
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* Buttons used across the app: one primary (ink), one secondary (outlined), one danger text. */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid var(--color-slate-300);
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--color-slate-100);
+  }
+  .btn:active:not(:disabled) {
+    background: var(--color-slate-200);
+  }
+  .btn:disabled {
+    color: var(--color-slate-400);
+    background: var(--color-slate-100);
+  }
+  .btn-primary {
+    background: var(--color-navy);
+    border-color: var(--color-navy);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-navy-2);
+  }
+  .btn-primary:active:not(:disabled) {
+    background: #264b80;
+  }
+  /* Outlined button for use on the navy top bar. */
+  .btn-ondark {
+    background: transparent;
+    border-color: rgb(255 255 255 / 0.28);
+    color: #fff;
+  }
+  .btn-ondark:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.12);
+  }
+  .btn-ondark:active:not(:disabled) {
+    background: rgb(255 255 255 / 0.2);
+  }
+  .btn-ondark:disabled {
+    background: transparent;
+    color: rgb(255 255 255 / 0.5);
+  }
+  .btn-danger {
+    color: var(--color-red-700);
+    border-color: var(--color-red-200);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--color-red-50);
+  }
+  .btn-lg {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  /* Status pill: pale tint, dark text of the same hue. */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    flex: none;
+  }
+  .pill-ok { background: #dcfae5; color: #04250e; }
+  .pill-bad { background: #ffedea; color: #831c1e; }
+  .pill-warn { background: #fffbeb; color: #92400e; box-shadow: inset 0 0 0 1px #fde68a; }
+  .pill-neutral { background: #eeeeee; color: #3d3d3d; }
+
+  /* Card: white on the ground, one hairline, no shadow. */
+  .card {
+    background: var(--color-sheet);
+    border: 1px solid var(--color-slate-200);
+    border-radius: 8px;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #f4f7fc;
+    border-bottom: 1px solid var(--color-slate-200);
+    border-radius: 7px 7px 0 0;
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--color-ink);
+  }
+  .card-note {
+    font-size: 12px;
+    color: var(--color-slate-500);
+  }
+
+  /* Label above a value. Sentence case, never tracked capitals. */
+  .label {
+    font-size: 13px;
+    color: var(--color-slate-500);
+  }
+
+  /* Rows inside a card: 44px pitch, a faint rule between. */
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 20px;
+    border-top: 1px solid var(--color-slate-100);
+  }
+
+  /* Quiet notices. Red is for the one fact that is wrong, not for decoration. */
+  .notice {
+    display: flex;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--color-slate-200);
+    background: var(--color-sheet);
+    font-size: 13px;
+  }
+  .notice-bad { background: var(--color-red-50); border-color: var(--color-red-200); color: var(--color-red-800); }
+  .notice-warn { background: var(--color-amber-50); border-color: var(--color-amber-200); color: var(--color-amber-700); }
+
+  /* A modal and its scrim: opaque dark scrim, no blur. */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgb(10 10 10 / 0.45);
+  }
+  /* Phones: dialogs become bottom sheets. */
+  @media (max-width: 639px) {
+    .scrim {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .scrim > [role="dialog"] {
+      max-width: none !important;
+      width: 100%;
+      max-height: 92dvh;
+      border-radius: 16px 16px 0 0 !important;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .card-head {
+      flex-wrap: wrap;
+    }
+    .btn-stack {
+      width: 100%;
+    }
+  }
+}
+
+/* Touch screens: bigger targets, no iOS zoom on focus, no tap delay or highlight. */
+@media (pointer: coarse) {
+  .btn { height: 44px; }
+  .btn-lg { height: 48px; }
+  .btn[class*="h-8"] { height: 44px !important; width: 44px !important; }
+  select, input, textarea { font-size: 16px !important; }
+  button, a, select, summary, [role="button"] { touch-action: manipulation; }
+  html { -webkit-tap-highlight-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

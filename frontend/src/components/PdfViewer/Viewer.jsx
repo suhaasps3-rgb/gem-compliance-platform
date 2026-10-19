@@ -150,14 +150,14 @@ export default function Viewer({ currentBidder }) {
   const requiresSignature = ['turnover', 'work_order', 'debarment', 'mii'].includes(selectedDocument);
 
   const getUploadLabel = () => {
-    if (verifying) return 'Parsing...';
+    if (verifying) return 'Parsing…';
     const labels = {
-      gst: 'Upload GST Certificate', udyam: 'Upload Udyam Certificate', epfo: 'Upload EPFO Statement', esic: 'Upload ESIC Challan',
-      startup: 'Upload Startup Cert', nsic: 'Upload NSIC Cert', work_order: 'Upload Work Order', turnover: 'Upload CA Turnover',
-      technical: 'Upload Tech Catalog', tender: 'Upload Bidder Document', itr: 'Upload ITR Return', mii: 'Upload MII Declaration',
-      gstr3b: 'Upload GSTR-3B Return', debarment: 'Upload Debarment Decl.'
+      gst: 'Upload GST certificate', udyam: 'Upload Udyam certificate', epfo: 'Upload EPFO statement', esic: 'Upload ESIC challan',
+      startup: 'Upload Startup certificate', nsic: 'Upload NSIC certificate', work_order: 'Upload work order', turnover: 'Upload CA turnover',
+      technical: 'Upload tech catalog', tender: 'Upload bidder document', itr: 'Upload ITR return', mii: 'Upload MII declaration',
+      gstr3b: 'Upload GSTR-3B return', debarment: 'Upload debarment declaration'
     };
-    return labels[selectedDocument] || 'Upload Document';
+    return labels[selectedDocument] || 'Upload document';
   };
 
   
@@ -479,169 +479,141 @@ export default function Viewer({ currentBidder }) {
     }
   };
 
+  const authFailed = !!visualAuthResult && (
+    visualAuthResult.is_signed_and_stamped === false ||
+    visualAuthResult.signature_detected === false ||
+    visualAuthResult.stamp_detected === false
+  );
+  const stampMissing = !!visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.stamp_detected === false);
+  const signatureMissing = !!visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false);
+
   return (
-    <div className="flex flex-col h-full bg-slate-50 border-r border-slate-200">
-      
+    <div className="flex flex-col h-full min-h-0">
+
       {/* ── Toolbar ── */}
-      <div className="flex items-center flex-wrap justify-between gap-2 bg-slate-900 text-white px-3.5 py-2.5 text-xs shadow-sm shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="font-bold tracking-tight text-slate-100 flex items-center gap-1.5">
-            <span>📑</span> Document Inspector
-          </span>
+      <div className="flex items-center flex-wrap justify-between gap-2 px-1 pb-3 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-[15px] font-medium">Document inspector</h2>
           {uploadedFileName && (
-            <span className="text-[10px] text-amber-300 bg-slate-800 px-2 py-0.5 rounded max-w-[140px] truncate">
+            <span className="pill pill-neutral max-w-[160px] truncate" title={uploadedFileName}>
               {uploadedFileName}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Upload button */}
-          <label className={`cursor-pointer px-2.5 py-1 rounded shadow-sm transition flex items-center text-[11px] font-semibold
-            ${verifying ? 'bg-blue-600 text-white animate-pulse' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'}`}>
-            <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          <label
+            className={`btn cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-data ${verifying ? 'pointer-events-none !bg-slate-100 !text-slate-500' : ''}`}
+            aria-busy={verifying}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             {getUploadLabel()}
-            <input type="file" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
+            <input type="file" accept="application/pdf" className="sr-only" onChange={handleFileUpload} disabled={verifying} />
           </label>
 
           {customPdfUrl && (
-            <button
-              onClick={handleResetUpload}
-              className="text-rose-400 hover:text-rose-300 text-[11px] underline cursor-pointer"
-            >
+            <button onClick={handleResetUpload} className="btn">
               Reset
             </button>
           )}
 
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-blue-400 hover:text-blue-300 font-semibold text-[11px] flex items-center gap-0.5 ml-1"
-          >
-            Open Tab ↗
+          <a href={pdfUrl} target="_blank" rel="noreferrer" className="btn">
+            Open in tab
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 17L17 7M9 7h8v8" />
+            </svg>
           </a>
         </div>
       </div>
 
       {/* ── Document Inspection Body ── */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        
-        {/* Official Statutory Document Card */}
-        <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-          
-          {/* Header Strip */}
-          <div className="bg-slate-800 text-white px-4 py-3 flex items-center justify-between">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                {meta.authority}
-              </div>
-              <h2 className="text-sm font-black tracking-tight text-white mt-0.5">
-                {meta.title}
-              </h2>
+      <div className="flex-1 overflow-y-auto space-y-3 pb-1">
+
+        {/* Official Statutory Document */}
+        <section className="rounded-lg border border-slate-200 overflow-hidden" aria-labelledby="doc-title">
+          <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[12px] text-slate-500">{meta.authority}</div>
+              <h3 id="doc-title" className="text-[18px] font-medium leading-tight mt-0.5">{meta.title}</h3>
             </div>
-            <div className="text-right">
-              <span className="inline-block px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-bold">
-                ✓ {meta.status}
-              </span>
-              <div className="text-[10px] text-slate-400 font-mono mt-0.5">{meta.ref}</div>
+            <div className="text-right shrink-0">
+              <span className="pill pill-ok">{meta.status.charAt(0) + meta.status.slice(1).toLowerCase().replace(/_/g, ' ')}</span>
+              <div className="text-[12px] text-slate-500 font-mono mt-1">{meta.ref}</div>
             </div>
           </div>
 
           {/* Document Content Details */}
-          <div className="p-4 space-y-3 text-xs text-slate-700">
-            <p className="text-slate-600 leading-relaxed text-[11px]">
+          <div className="px-4 pb-4 space-y-3">
+            <p className="text-[14px] text-slate-700 leading-relaxed">
               {meta.summary}
             </p>
 
             {requiresSignature && (
-              <React.Fragment>
-              {/* Forensic Security Block */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
-              <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center justify-between">
-                <span>Visual Authenticity &amp; Integrity Analysis</span>
-                <span className="font-mono text-emerald-600 font-bold">SHA-256 Validated</span>
-              </div>
+              /* Forensic security block */
+              <div className="rounded-md bg-slate-50 px-3.5 py-3">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <h4 className="text-[14px] font-medium">Visual authenticity and integrity</h4>
+                  <span className="text-[12px] text-slate-500">SHA-256 validated</span>
+                </div>
 
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="p-2 bg-white rounded border border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-600">Official Stamp:</span>
-                  <span className={`font-bold ${visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.stamp_detected === false) ? 'text-amber-600' : 'text-emerald-700'}`}>
-                    {visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.stamp_detected === false) ? '⚠️ Missing' : '✓ Detected'}
-                  </span>
+                <div className="flex items-center justify-between min-h-9 text-[13px]">
+                  <span className="text-slate-600">Official stamp</span>
+                  {stampMissing ? <span className="pill pill-warn">Missing</span> : <span className="pill pill-ok">Detected</span>}
                 </div>
-                <div className="p-2 bg-white rounded border border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-600">Signature:</span>
-                  <span className={`font-bold ${visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false) ? 'text-amber-600' : 'text-emerald-700'}`}>
-                    {visualAuthResult && (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false) ? '⚠️ Missing' : '✓ Validated'}
-                  </span>
+                <div className="flex items-center justify-between min-h-9 text-[13px] border-t border-slate-200">
+                  <span className="text-slate-600">Signature</span>
+                  {signatureMissing ? <span className="pill pill-warn">Missing</span> : <span className="pill pill-ok">Validated</span>}
                 </div>
-              </div>
 
-              {visualAuthResult && (
-                <div className={`p-2 rounded text-[11px] font-semibold border ${
-                  (visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false || visualAuthResult.stamp_detected === false)
-                    ? 'bg-amber-50 text-amber-800 border-amber-200'
-                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                }`}>
-                  {(visualAuthResult.is_signed_and_stamped === false || visualAuthResult.signature_detected === false || visualAuthResult.stamp_detected === false)
-                    ? '⚠️ Attention: Document lacks authorized stamp or signature.'
-                    : '✓ Forensic Model: Signature and official rubber stamp confirmed.'}
-                </div>
-              )}
+                {visualAuthResult && (
+                  <p className={`mt-2 text-[13px] ${authFailed ? 'text-amber-800' : 'text-emerald-800'}`}>
+                    {authFailed
+                      ? 'Attention: this document lacks an authorized stamp or signature.'
+                      : 'Forensic model: signature and official rubber stamp confirmed.'}
+                  </p>
+                )}
               </div>
-              </React.Fragment>
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 pt-1">
-              <a
-                href={pdfUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 text-center py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-xs transition"
-              >
-                View Full PDF Document ↗
+            <div className="flex flex-wrap items-center gap-2">
+              <a href={pdfUrl} target="_blank" rel="noreferrer" className="btn btn-lg flex-1">
+                View full PDF document
               </a>
-              <a
-                href={pdfUrl}
-                download
-                className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs border border-slate-300 transition"
-              >
-                ⬇ Download
+              <a href={pdfUrl} download className="btn btn-lg">
+                Download
               </a>
             </div>
-
           </div>
-        </div>
+        </section>
 
         {/* Embedded PDF Object (Zero recursion risk) */}
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-          <div className="px-3 py-1.5 bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-600 flex items-center justify-between">
-            <span>Inline PDF Frame</span>
-            <span className="font-mono text-slate-400">application/pdf</span>
+        <section className="rounded-lg border border-slate-200 overflow-hidden" aria-label="Inline PDF frame">
+          <div className="px-4 h-9 flex items-center justify-between text-[12px] text-slate-500 border-b border-slate-100">
+            <span>Inline PDF frame</span>
+            <span className="font-mono">application/pdf</span>
           </div>
           <object
             data={pdfUrl}
             type="application/pdf"
-            className="w-full h-[480px] bg-slate-100"
+            className="w-full h-[480px] bg-slate-50"
           >
-            <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-600 space-y-2">
-              <div className="text-3xl">📄</div>
-              <p className="text-xs font-semibold">Inline preview rendered in browser</p>
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-600 gap-1.5">
+              <p className="text-[14px] text-ink">Inline preview isn't available in this browser.</p>
               <a
                 href={pdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs font-bold text-blue-600 underline"
+                className="text-[13px] text-data underline underline-offset-2"
               >
-                Click here to view PDF in dedicated viewer ↗
+                Open the PDF in the dedicated viewer
               </a>
             </div>
           </object>
-        </div>
+        </section>
 
       </div>
 

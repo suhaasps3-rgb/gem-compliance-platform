@@ -1,9 +1,12 @@
 import networkx as nx
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from tender_store import get_closing_date, DEFAULT_TENDER_ID
 
 class EvidenceGraphEngine:
-    def __init__(self, bidder_data: Dict[str, Any]):
+    def __init__(self, bidder_data: Dict[str, Any], tender_id: Optional[str] = None, tender_closing_date: Optional[str] = None):
         self.bidder = bidder_data
+        # Date checks are made as of the tender's closing date, not today.
+        self.tender_closing_date = tender_closing_date or get_closing_date(tender_id or DEFAULT_TENDER_ID)
         self.graph = nx.DiGraph()
         self.contradictions = []
         self.hard_filters = {
@@ -122,7 +125,7 @@ class EvidenceGraphEngine:
 
         # 3. Theta Case: Time-Travel Temporal Validation
         debarment = self.bidder.get("debarment_mock", {})
-        tender_closing_date = "2025-12-01"
+        tender_closing_date = self.tender_closing_date
         historical = debarment.get("historical_records", [])
         for rec in historical:
             rec_start = rec.get("start_date", "")

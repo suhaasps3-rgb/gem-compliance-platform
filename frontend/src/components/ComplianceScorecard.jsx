@@ -1,5 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDashboardStore } from '../store/dashboardStore';
+import { CountUp, GrowBar } from '../utils/motion';
+
+/** A ring that fills to the score. The fill is a CSS transition, so reduced motion switches it off. */
+function ScoreRing({ score, color }) {
+  const r = 26;
+  const circ = 2 * Math.PI * r;
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(score));
+    return () => cancelAnimationFrame(id);
+  }, [score]);
+  return (
+    <svg width="68" height="68" viewBox="0 0 68 68" className="shrink-0 -rotate-90" aria-hidden="true">
+      <circle cx="34" cy="34" r={r} fill="none" stroke="#e3e6ea" strokeWidth="7" />
+      <circle
+        cx="34" cy="34" r={r} fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={circ * (1 - Math.max(0, Math.min(100, shown)) / 100)}
+        style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)' }}
+      />
+    </svg>
+  );
+}
 
 export default function ComplianceScorecard({ displayData, bidderDetails }) {
   const { 
@@ -49,36 +72,29 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
   // ── If forgery mismatch detected, block the entire score ──
   if (hasForgery) {
     return (
-      <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 shadow-sm mb-6">
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
-            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-red-800 mb-1">⛔ Compliance Score Blocked</h2>
-            <p className="text-sm text-red-700 mb-3">
-              One or more uploaded documents belong to a <strong>different entity</strong> than the selected bidder
-              (<strong>{bidderDetails?.name?.toUpperCase()}</strong>). Scoring is suspended until all documents are verified to belong to the correct bidder.
-            </p>
-            <div className="bg-white rounded border border-red-200 p-3">
-              <p className="text-xs font-bold text-red-800 uppercase tracking-wider mb-2">Mismatched Documents:</p>
-              <ul className="space-y-1">
-                {mismatches.map((doc, i) => (
-                  <li key={i} className="text-sm text-red-700 flex items-center gap-2">
-                    <span className="text-red-500">✗</span>
-                    <span className="font-semibold">{doc}</span>
-                    <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold border border-red-200">FORGERY ALERT</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-4xl font-extrabold text-red-400 line-through">—</span>
-            <span className="text-xs uppercase font-semibold text-red-400 tracking-wider">BLOCKED</span>
-          </div>
+      <div role="alert" className="notice notice-bad !p-5 !gap-4">
+        <svg className="w-5 h-5 shrink-0 mt-0.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-[16px] font-medium text-red-900">Compliance score blocked</h2>
+          <p className="text-[14px] mt-1">
+            One or more uploaded documents belong to a different entity than the selected bidder
+            ({bidderDetails?.name}). Scoring is suspended until every document is verified to belong to the correct bidder.
+          </p>
+          <h3 className="text-[13px] font-medium mt-3 mb-1">Mismatched documents</h3>
+          <ul>
+            {mismatches.map((doc, i) => (
+              <li key={i} className="flex items-center justify-between gap-3 min-h-9 border-t border-red-200 text-[14px]">
+                <span>{doc}</span>
+                <span className="pill pill-bad">Forgery alert</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-[30px] leading-none text-red-700 num">—</div>
+          <div className="text-[12px] text-red-800 mt-1">Blocked</div>
         </div>
       </div>
     );
@@ -112,47 +128,91 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
   score = Math.max(0, score);
   
   let riskLevel = 'LOW';
-  let riskColor = 'text-green-600 bg-green-50 border-green-200';
-  
+  let riskDot = '#2e7d32';
+
   if (score < 40) {
     riskLevel = 'CRITICAL';
-    riskColor = 'text-red-700 bg-red-50 border-red-200';
+    riskDot = '#c4242a';
   } else if (score < 60) {
     riskLevel = 'HIGH';
-    riskColor = 'text-orange-700 bg-orange-50 border-orange-200';
+    riskDot = '#c4242a';
   } else if (score < 80) {
     riskLevel = 'MEDIUM';
-    riskColor = 'text-yellow-700 bg-yellow-50 border-yellow-200';
+    riskDot = '#b45309';
   }
+  const riskWord = riskLevel.charAt(0) + riskLevel.slice(1).toLowerCase();
+
+  const evidence = displayData?.scores?.evidence_confidence;
+  const risk = displayData?.scores?.probabilistic_risk;
+  const hasEvidence = typeof evidence === 'number' || (evidence != null && !Number.isNaN(Number(evidence)));
+  const hasRisk = typeof risk === 'number' || (risk != null && !Number.isNaN(Number(risk)));
+  const Dash = () => <span className="text-slate-400">—</span>;
 
   return (
-    <div className="bg-white border rounded-lg p-6 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between">
-      <div>
-        <h2 className="text-xl font-bold text-gray-800 mb-1">Overall Compliance Score</h2>
-        <p className="text-sm text-gray-500">Aggregated from document verifications, graphs, and technical parameters</p>
+    <section aria-label="Compliance scores" className="@container">
+      <div className="grid grid-cols-2 @lg:grid-cols-3 @2xl:grid-cols-[1.25fr_1fr_1fr_1fr] gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+        {/* The answer figure leads: the score the officer is deciding on */}
+        <div className="bg-sheet px-4 @lg:px-5 py-4 col-span-2 @lg:col-span-3 @2xl:col-span-1">
+          <div className="label">Overall compliance score</div>
+          {complianceBlockedReason ? (
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-[36px] leading-none num">0</span>
+              <span className="text-[14px] text-slate-500">/ 100</span>
+              <span className="pill pill-bad ml-1">Blocked</span>
+            </div>
+          ) : (
+            <div className="mt-2 flex items-center gap-4">
+              <ScoreRing score={score} color={riskDot} />
+              <div className="flex items-baseline gap-2">
+                <span className="text-[36px] leading-none num"><CountUp value={score} /></span>
+                <span className="text-[14px] text-slate-500">/ 100</span>
+              </div>
+            </div>
+          )}
+          <div className="text-[12px] text-slate-500 mt-2">
+            From document checks, the evidence graph and technical parameters
+          </div>
+        </div>
+
+        <div className="bg-sheet px-4 @lg:px-5 py-4">
+          <div className="label">Risk level</div>
+          {complianceBlockedReason ? (
+            <div className="mt-1 text-[24px] leading-tight text-slate-400">—</div>
+          ) : (
+            <div className="mt-1 flex items-center gap-2 text-[24px] leading-tight">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: riskDot }} aria-hidden="true" />
+              {riskWord}
+            </div>
+          )}
+          <div className="text-[12px] text-slate-500 mt-2">Low 80+, medium 60–79, high 40–59</div>
+        </div>
+
+        <div className="bg-sheet px-4 @lg:px-5 py-4">
+          <div className="label">Evidence confidence</div>
+          <div className="mt-1 text-[24px] leading-tight num">
+            {hasEvidence ? <CountUp value={Number(evidence) * 10} decimals={1} /> : <Dash />}
+            <span className="text-[14px] text-slate-500 whitespace-nowrap"> / 10</span>
+          </div>
+          {hasEvidence && (
+            <div className="mt-2.5 h-1 rounded-full bg-slate-200" role="img" aria-label={`Evidence confidence ${(Number(evidence) * 10).toFixed(1)} out of 10`}>
+              <GrowBar className="h-1 rounded-full bg-data" style={{ width: `${Math.min(100, Math.max(0, Number(evidence) * 100))}%` }} />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-sheet px-4 @lg:px-5 py-4 col-span-2 @lg:col-span-1">
+          <div className="label">Probabilistic risk</div>
+          <div className="mt-1 text-[24px] leading-tight num">
+            {hasRisk ? <CountUp value={Number(risk)} decimals={Number.isInteger(Number(risk)) ? 0 : 1} /> : <Dash />}
+            <span className="text-[14px] text-slate-500"> / 100</span>
+          </div>
+          {hasRisk && (
+            <div className="mt-2.5 h-1 rounded-full bg-slate-200" role="img" aria-label={`Probabilistic risk ${Number(risk)} out of 100`}>
+              <GrowBar className="h-1 rounded-full bg-slate-500" style={{ width: `${Math.min(100, Math.max(0, Number(risk)))}%` }} />
+            </div>
+          )}
+        </div>
       </div>
-      {complianceBlockedReason ? (
-        <div className="flex items-center gap-4 mt-4 md:mt-0">
-          <div className="flex flex-col items-center">
-            <span className="text-5xl font-extrabold text-red-700">0</span>
-            <span className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Out of 100</span>
-          </div>
-          <div className="px-4 py-2 rounded-md border font-bold bg-red-900 text-white border-red-700 flex items-center gap-2 animate-pulse">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-            ⛔ BLOCKED
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-6 mt-4 md:mt-0">
-          <div className="flex flex-col items-center">
-            <span className="text-4xl font-extrabold text-blue-600">{score}</span>
-            <span className="text-xs uppercase font-semibold text-gray-400 tracking-wider">Out of 100</span>
-          </div>
-          <div className={`px-4 py-2 rounded-md border font-bold ${riskColor}`}>
-            {riskLevel} RISK
-          </div>
-        </div>
-      )}
-    </div>
+    </section>
   );
 }

@@ -1,44 +1,34 @@
 import React from 'react';
 
+// Unused placeholder: raw serialized nodes. The live graph is EvidenceGraph.jsx.
 export default function EvidenceGraphPlaceholder({ graphData }) {
   if (!graphData || !graphData.nodes) return null;
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mb-6">
-      <h3 className="text-sm font-semibold text-slate-500 mb-4 uppercase tracking-wider">
-        Evidence Provenance Graph (In-Memory Traversal)
-      </h3>
-      <div className="flex flex-col items-center gap-6">
-        {/* Mock representation of graph */}
-        <div className="flex gap-4 items-center flex-wrap justify-center">
+    <section className="card">
+      <div className="card-head border-b border-slate-100">
+        <h3 className="card-title">Evidence provenance graph</h3>
+        <span className="card-note">In-memory traversal</span>
+      </div>
+      <div className="px-5 py-4 flex flex-col gap-4">
+        <ol className="flex gap-2 items-center flex-wrap">
           {graphData.nodes.map((node, idx) => (
-            <React.Fragment key={node.id || idx}>
-              <div 
-                className={`p-3 rounded-lg border-2 text-sm font-medium shadow-sm transition-transform hover:scale-105
-                  ${node.type === 'Claim' ? 'border-blue-300 bg-blue-50 text-blue-700' : 
-                    node.type === 'Evidence' ? 'border-emerald-300 bg-emerald-50 text-emerald-700' :
-                    node.type === 'Anchor' ? 'border-purple-300 bg-purple-50 text-purple-700' :
-                    'border-slate-300 bg-white text-slate-700'}`}
-              >
-                <div className="text-xs opacity-75 mb-1">{node.type}</div>
+            <li key={node.id || idx} className="flex items-center gap-2">
+              <div className={`px-3 py-2 rounded-md border text-[13px] ${node.type === 'Claim' ? 'border-blue-200 bg-blue-50 text-blue-900' : 'border-slate-200 bg-sheet text-slate-800'}`}>
+                <div className="text-[12px] text-slate-500">{node.type}</div>
                 <div>{node.label || node.id}</div>
-                {node.source && <div className="text-xs mt-1 font-bold">{node.source}</div>}
+                {node.source && <div className="text-[12px] text-slate-500 mt-0.5">{node.source}</div>}
               </div>
-              
-              {/* Draw an arrow to the next node if it exists */}
               {idx < graphData.nodes.length - 1 && (
-                <svg className="w-6 h-6 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                <svg className="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                 </svg>
               )}
-            </React.Fragment>
+            </li>
           ))}
-        </div>
-        
-        <div className="text-xs text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-200">
-          * Note: Full NetworkX force-directed visualization to be implemented. Shows raw serialized nodes.
-        </div>
+        </ol>
+        <p className="text-[12px] text-slate-500">The full force-directed visualization is not implemented here; this shows the raw serialized nodes.</p>
       </div>
-    </div>
+    </section>
   );
 }

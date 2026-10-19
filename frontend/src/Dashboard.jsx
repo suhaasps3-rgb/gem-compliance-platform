@@ -7,9 +7,34 @@ import ComplianceScorecard from './components/ComplianceScorecard';
 import ExperiencePanel from './components/ExperiencePanel';
 import TechnicalMatrix from './components/TechnicalMatrix';
 import TurnoverVerificationCard from './components/TurnoverVerificationCard';
+import CaseBrief from './components/CaseBrief';
+import SectionNav from './components/SectionNav';
 
 import { useDashboardStore } from './store/dashboardStore';
 import { getClientMockDashboard } from './utils/mockFallback';
+import { RevealOnMount } from './utils/motion';
+
+// Sections the jump bar can offer. It lists only those that are on screen.
+const NAV_SECTIONS = [
+  { id: 'sec-verdict', label: 'Verdict' },
+  { id: 'sec-decision', label: 'Decision' },
+  { id: 'sec-checks', label: 'Registry checks' },
+  { id: 'sec-turnover', label: 'Turnover' },
+  { id: 'sec-docs', label: 'Documents' },
+  { id: 'sec-experience', label: 'Experience' },
+  { id: 'sec-specs', label: 'Specifications' },
+  { id: 'sec-graph', label: 'Evidence graph' },
+];
+
+// Registry check keys arrive as snake_case ids; show them as readable labels.
+const CHECK_ACRONYMS = new Set(['gst', 'gstin', 'pan', 'mca', 'epfo', 'esic', 'msme', 'cin', 'din', 'ca', 'itr', 'mii']);
+const checkLabel = (key) => {
+  const words = String(key).split('_').filter(Boolean);
+  if (!words.length) return String(key);
+  const out = words.map((w) => (CHECK_ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w.toLowerCase()));
+  out[0] = out[0].charAt(0).toUpperCase() + out[0].slice(1);
+  return out.join(' ');
+};
 
 export default function Dashboard({ bidderId }) {
   const tenderRules = useDashboardStore(s => s.tenderRules);
@@ -18,6 +43,8 @@ export default function Dashboard({ bidderId }) {
   const clearAllDocs = useDashboardStore(s => s.clearAllDocs);
   const visualAuthResult = useDashboardStore(s => s.visualAuthResult);
   const turnoverParseResult = useDashboardStore(s => s.turnoverParseResult);
+  const technicalMatrixResult = useDashboardStore(s => s.technicalMatrixResult);
+  const experienceResult = useDashboardStore(s => s.experienceResult);
   const complianceBlockedReason = useDashboardStore(s => s.complianceBlockedReason);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -25,6 +52,9 @@ export default function Dashboard({ bidderId }) {
   
   // New PO Decision State
   const [poDecision, setPoDecision] = useState(null);
+  const [confirmReject, setConfirmReject] = useState(false);
+  // A pending rejection must never carry over to a different bidder.
+  useEffect(() => { setConfirmReject(false); }, [bidderId]);
 
   useEffect(() => {
     // If a doc was uploaded, don't re-fetch — use that result instead
@@ -89,8 +119,29 @@ export default function Dashboard({ bidderId }) {
   const displayData = verifiedDocResult || data;
   const displayBidderId = verifiedDocResult ? verifiedDocResult.bidder_id : bidderId;
 
-  if (!verifiedDocResult && loading) return <div className="p-12 text-center text-slate-500 font-medium">Assembling Evidence Provenance Graph...</div>;
-  if (!verifiedDocResult && error) return <div className="p-12 text-center text-red-500 font-medium">Error: {error}</div>;
+  if (!verifiedDocResult && loading) {
+    // Same frame as the loaded screen, values as flat grey bars, no layout shift when data lands.
+    return (
+      <div className="p-4 md:p-6 pt-2 md:pt-3 space-y-3" role="status" aria-live="polite">
+        <span className="sr-only">Assembling the evidence provenance graph…</span>
+        <div className="space-y-2 pb-1" aria-hidden="true">
+          <div className="h-3 w-32 rounded bg-slate-200" />
+          <div className="h-6 w-64 rounded bg-slate-200" />
+          <div className="h-3 w-48 rounded bg-slate-200" />
+        </div>
+        <div className="h-[112px] rounded-lg bg-slate-200" aria-hidden="true" />
+        <div className="h-[200px] rounded-lg bg-slate-200" aria-hidden="true" />
+        <div className="h-[120px] rounded-lg bg-slate-200" aria-hidden="true" />
+      </div>
+    );
+  }
+  if (!verifiedDocResult && error) {
+    return (
+      <div className="p-4 md:p-6">
+        <p className="notice notice-bad" role="alert">Couldn't load the verification: {error}</p>
+      </div>
+    );
+  }
   if (!displayData) return null;
 
   // Dynamically blend visual authenticity results into the AI Engine
@@ -112,39 +163,91 @@ export default function Dashboard({ bidderId }) {
     aiRedFlags.unshift("Visual Authenticity Failure: The uploaded document lacks a mandatory authorized ink signature or digital stamp.");
   }
 
+  // ── Presentation helpers (no change to what is decided, only how it is shown) ──
+  const bidderName = displayData?.bidder_details?.name || displayBidderId;
+  const overall = displayData?.overall_status;
+  const statusTone = isVisualAuthFailed || overall === 'NON_COMPLIANT' || overall === 'REJECTED' ? 'bad'
+    : overall === 'VERIFIED_COMPLIANT' ? 'ok' : 'warn';
+  const statusText = isVisualAuthFailed
+    ? 'Critical: missing signature or stamp'
+    : overall === 'NON_COMPLIANT'
+      ? 'Red: non-compliant evidence, mandatory officer review'
+      : overall === 'VERIFIED_COMPLIANT'
+        ? 'Verified compliant'
+        : (overall ? overall.replace(/_/g, ' ').toLowerCase().replace(/^./, c => c.toUpperCase()) : 'Unknown');
+  const decisionTone = aiDecision === 'Approve' ? 'ok' : aiDecision === 'Reject' ? 'bad' : 'warn';
+  const pipeline = ['AI interprets', 'Deterministic rules validate', 'Graph explains', 'AI recommends', 'Officer decides'];
+
+  // ── At a glance: what is verified, and what the officer has to look at ──
+  const briefChecks = Object.entries(displayData?.hard_filters || {}).map(([key, status]) => ({ key, label: checkLabel(key), status }));
+  if (visualAuthResult) {
+    briefChecks.push({ key: 'signature', label: 'Signature and stamp authenticity', status: visualAuthResult.is_signed_and_stamped ? 'PASS' : 'FAIL' });
+  }
+  const failedChecks = briefChecks.filter((c) => c.status === 'FAIL').length;
+  const unverifiedChecks = briefChecks.filter((c) => c.status !== 'PASS' && c.status !== 'FAIL').length;
+  const conflictCount = (displayData?.active_contradictions || displayData?.contradictions || []).length;
+  const missingDocCount = displayData?.ai_recommendation?.missing_docs?.length || 0;
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const attention = [];
+  if (complianceBlockedReason) attention.push({ id: 'blocked', tone: 'bad', text: 'Score blocked: an uploaded document belongs to a different entity', target: 'sec-verdict' });
+  if (isVisualAuthFailed) attention.push({ id: 'sig', tone: 'bad', text: 'Missing signature or rubber stamp on the uploaded document', target: 'sec-checks' });
+  if (failedChecks > 0) attention.push({ id: 'failed', tone: 'bad', text: `${plural(failedChecks, 'registry check', 'registry checks')} failed`, target: 'sec-checks' });
+  if (aiRedFlags.length > 0) attention.push({ id: 'flags', tone: 'bad', text: `${plural(aiRedFlags.length, 'red flag', 'red flags')} raised in the AI recommendation`, target: 'sec-verdict' });
+  if (conflictCount > 0) attention.push({ id: 'conflicts', tone: 'bad', text: `${plural(conflictCount, 'contradiction', 'contradictions')} between the bidder's claims and the registries`, target: 'sec-conflicts' });
+  if (missingDocCount > 0) attention.push({ id: 'missing', tone: 'warn', text: `${plural(missingDocCount, 'mandatory document', 'mandatory documents')} missing`, target: 'sec-missing' });
+  if (unverifiedChecks > 0) attention.push({ id: 'unverified', tone: 'warn', text: `${plural(unverifiedChecks, 'registry check', 'registry checks')} could not be verified`, target: 'sec-checks' });
+  if (technicalMatrixResult && technicalMatrixResult.overall_result !== 'PASS') {
+    attention.push({ id: 'tech', tone: technicalMatrixResult.overall_result === 'FAIL' ? 'bad' : 'warn', text: technicalMatrixResult.overall_result === 'FAIL' ? 'Technical specifications fail the tender requirements' : 'Technical specifications are incomplete', target: 'sec-specs' });
+  }
+  if (experienceResult && experienceResult.result && experienceResult.result !== 'PASS') {
+    attention.push({ id: 'exp', tone: experienceResult.result === 'FAIL' ? 'bad' : 'warn', text: experienceResult.result === 'FAIL' ? 'Experience requirement not met' : 'Experience evidence is insufficient', target: 'sec-experience' });
+  }
+
+  const AlertIcon = (
+    <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  );
+
+  const checkPill = (val) => (
+    val === 'PASS'
+      ? <span className="pill pill-ok">Verified</span>
+      : val === 'FAIL'
+        ? <span className="pill pill-bad">Failed</span>
+        : <span className="pill pill-warn">Unverified</span>
+  );
+
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <RevealOnMount className="p-4 md:p-6 pt-2 md:pt-3 space-y-3">
+      <SectionNav sections={NAV_SECTIONS} />
 
       {/* Uploaded Doc Banner */}
       {verifiedDocResult && (
-        <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-          <div className="flex items-center gap-2 text-blue-800 text-sm font-medium">
-            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Showing results from uploaded document: <span className="font-bold">{verifiedDocResult.bidder_id}</span>
-            &nbsp;|&nbsp; Extracted claims: {Object.keys(verifiedDocResult.extracted_claims || {}).join(', ')}
+        <div className="notice items-center justify-between flex-wrap">
+          <div className="text-[13px] text-slate-700 min-w-0">
+            Showing results from the uploaded document <span className="font-medium text-ink">{verifiedDocResult.bidder_id}</span>
+            <span className="text-slate-400"> · </span>
+            Extracted claims: {Object.keys(verifiedDocResult.extracted_claims || {}).join(', ')}
           </div>
-          <button
-            onClick={clearVerifiedDocResult}
-            className="ml-4 text-xs text-blue-600 underline hover:text-blue-800 shrink-0"
-          >
-            ✕ Clear &amp; return to dropdown
+          <button onClick={clearVerifiedDocResult} className="btn shrink-0">
+            Clear and return to bidder list
           </button>
         </div>
       )}
 
-      {/* Visual Authenticity Failure Alert Banner */}
+      {/* Visual Authenticity Failure Alert */}
       {isVisualAuthFailed && (
-        <div className="bg-red-50 border-2 border-red-500 p-5 mb-6 rounded-lg shadow-md flex items-start gap-4 animate-pulse">
-          <div className="text-red-600 mt-1">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-red-900 font-extrabold text-lg">CRITICAL COMPLIANCE FAILURE: Missing Signature / Rubber Stamp</h3>
-              <span className="text-xs bg-red-600 text-white font-bold px-2.5 py-0.5 rounded-full">PENALTY: -50 PTS</span>
+        <div role="alert" className="notice notice-bad !p-4">
+          {AlertIcon}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-[15px] font-medium text-red-900">Critical compliance failure: missing signature or rubber stamp</h2>
+              <span className="pill pill-bad !bg-red-100">Penalty −50 points</span>
             </div>
-            <p className="text-red-800 text-sm mt-1 font-medium">
-              The uploaded document failed the Visual Authenticity check. No authorized ink signature, digital signature certificate (DSC token), or official rubber stamp was detected in the execution block. The Overall Compliance Score has been penalized by 50 points and flagged for mandatory officer investigation.
+            <p className="text-[13px] mt-1">
+              The uploaded document failed the visual authenticity check. No authorized ink signature, digital signature
+              certificate (DSC token) or official rubber stamp was detected in the execution block. The overall compliance
+              score has been reduced by 50 points and the bid is flagged for mandatory officer investigation.
             </p>
           </div>
         </div>
@@ -152,280 +255,233 @@ export default function Dashboard({ bidderId }) {
 
       {/* Document Identity Mismatch / Score Blocked Banner */}
       {complianceBlockedReason && (
-        <div className="bg-red-900 border-2 border-red-700 p-5 mb-6 rounded-lg shadow-xl flex items-start gap-4">
-          <div className="text-red-300 mt-1 shrink-0">
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <h3 className="text-white font-extrabold text-xl tracking-wide">⛔ COMPLIANCE SCORE BLOCKED</h3>
-              <span className="text-xs bg-yellow-400 text-red-900 font-black px-3 py-1 rounded-full animate-pulse">FORGERY ALERT</span>
+        <div role="alert" className="notice notice-bad !p-4">
+          {AlertIcon}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-[15px] font-medium text-red-900">Compliance score blocked</h2>
+              <span className="pill pill-bad !bg-red-100">Forgery alert</span>
             </div>
-            <p className="text-red-200 text-sm font-semibold mt-1">{complianceBlockedReason}</p>
-            <p className="text-red-300 text-xs mt-2">SATARK has detected a potential document substitution attempt. The compliance score cannot be computed until an authentic document matching this bidder's identity is submitted. This event has been logged for audit.</p>
+            <p className="text-[13px] mt-1 font-medium">{complianceBlockedReason}</p>
+            <p className="text-[13px] mt-1">
+              SATARK has detected a potential document substitution attempt. The compliance score cannot be computed until
+              an authentic document matching this bidder's identity is submitted. This event has been logged for audit.
+            </p>
           </div>
         </div>
       )}
 
-      {/* Top Header Panel */}
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Bidder Verification Dashboard</h1>
-            <p className="text-slate-500 text-sm mt-1">Target: {displayBidderId}</p>
+      {/* Title row: who is being reviewed, and the verdict of the evidence so far */}
+      <header className="rounded-lg bg-navy text-white px-5 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <div className="min-w-0">
+            <p className="text-[13px] text-blue-200">Bidder verification</p>
+            <h1 className="text-[28px] font-medium leading-tight mt-0.5 break-words text-white">{bidderName}</h1>
+            <p className="text-[13px] text-blue-200 mt-1">
+              <span className="font-mono text-[12px] whitespace-nowrap">{displayBidderId}</span> · tender SIH-2026
+            </p>
           </div>
-          <div className={`px-4 py-2 rounded-full font-bold text-sm tracking-wide ${
-            isVisualAuthFailed || displayData?.overall_status !== 'VERIFIED_COMPLIANT' ? 'bg-red-600 text-white shadow-lg' :
-            'bg-emerald-100 text-emerald-800'
-          }`}>
-            STATUS: {isVisualAuthFailed ? 'CRITICAL — MISSING SIGNATURE / STAMP' : (displayData?.overall_status === 'NON_COMPLIANT' ? 'RED — Mandatory Officer Review / Non-Compliant Evidence' : (displayData?.overall_status?.replace(/_/g, ' ') || 'UNKNOWN'))}
-          </div>
+          <span className={`pill ${statusTone === 'ok' ? 'pill-ok' : statusTone === 'bad' ? 'pill-bad' : 'pill-warn'} !h-7 !text-[13px] max-w-full !whitespace-normal !leading-tight py-1`}>
+            {statusText}
+          </span>
         </div>
-
-        <div className="mb-6 bg-slate-50 border border-slate-200 rounded p-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-             <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">1</span>
-                AI Interprets
-             </div>
-             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-             <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">2</span>
-                Deterministic Rules Validate
-             </div>
-             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-             <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">3</span>
-                Graph Explains
-             </div>
-             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-             <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">4</span>
-                AI Recommends
-             </div>
-             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-             <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">5</span>
-                Officer Decides
-             </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-8">
-          {/* Hard Filters */}
-          <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Gov Portal Integration Layer (Simulated)</h3>
-            <div className="space-y-2">
-              {displayData?.hard_filters && Object.entries(displayData.hard_filters).map(([key, val]) => (
-                <div key={key} className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100 text-sm">
-                  <span className="text-slate-600 capitalize">{key.replace('_', ' ')}</span>
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider flex items-center gap-1 ${
-                      val === 'PASS' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
-                      val === 'FAIL' ? 'bg-red-100 text-red-700 border border-red-200' :
-                      'bg-orange-100 text-orange-700 border border-orange-200'
-                    }`}>
-                      {val === 'PASS' ? (
-                        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg> VERIFIED</>
-                      ) : val === 'FAIL' ? (
-                        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg> FAILED</>
-                      ) : (
-                        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> UNVERIFIED</>
-                      )}
-                  </span>
-                </div>
-              ))}
-
-              {visualAuthResult && (
-                <div className="flex items-center justify-between bg-slate-50 p-2 rounded border border-slate-100 text-sm">
-                  <span className="text-slate-700 font-semibold">Signature &amp; Stamp Authenticity</span>
-                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider flex items-center gap-1 ${
-                      visualAuthResult.is_signed_and_stamped ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
-                      'bg-red-100 text-red-700 border border-red-200'
-                    }`}>
-                      {visualAuthResult.is_signed_and_stamped ? (
-                        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg> VERIFIED</>
-                      ) : (
-                        <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg> FAILED (UNSIGNED)</>
-                      )}
-                  </span>
-                </div>
+        <ol aria-label="How the verdict is reached" className="hidden sm:flex mt-4 pt-3 border-t border-white/15 flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] text-blue-200">
+          {pipeline.map((step, i) => (
+            <li key={step} className="flex items-center gap-1.5">
+              <span className={i === pipeline.length - 1 ? 'text-white font-medium' : ''}>{step}</span>
+              {i < pipeline.length - 1 && (
+                <svg className="w-3 h-3 text-blue-300/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
               )}
+            </li>
+          ))}
+        </ol>
+      </header>
 
-              {/* Dynamically Extracted Rules */}
-              {tenderRules?.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <h4 className="text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-2">Tender-Specific Rules (AI Extracted)</h4>
-                  {tenderRules.map((rule, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-blue-50 p-2 rounded border border-blue-100 text-sm mb-2">
-                      <div className="flex flex-col">
-                        <span className="text-blue-800 font-semibold text-xs">{rule.clause}</span>
-                        <span className="text-blue-600 text-[10px] truncate max-w-[200px]">{rule.description}</span>
-                      </div>
-                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-200 shrink-0">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg> APPLIED
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Scores */}
-          <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Graph Scoring</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-slate-600">Evidence Confidence</span>
-                  <span className="font-semibold text-slate-800">{displayData?.scores?.evidence_confidence || 0} / 1.00</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{width: `${(displayData?.scores?.evidence_confidence || 0) * 100}%`}}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-slate-600">Probabilistic Risk</span>
-                  <span className="font-semibold text-slate-800">{displayData?.scores?.probabilistic_risk || 0} / 100</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className="bg-amber-500 h-2 rounded-full" style={{width: `${displayData?.scores?.probabilistic_risk || 0}%`}}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
-        <ComplianceScorecard displayData={displayData} bidderDetails={displayData?.bidder_details} />
+      {/* The score, and what it is made of */}
+      <ComplianceScorecard displayData={displayData} bidderDetails={displayData?.bidder_details} />
 
-      {/* ── CA Turnover Verification Card (shown after upload) ── */}
-      <TurnoverVerificationCard />
+      {/* What is verified and what needs the officer, with a jump to each */}
+      <CaseBrief checks={briefChecks} attention={attention} />
 
-      {/* Missing Mandatory Documents Section */}
+      {/* Missing Mandatory Documents */}
       {displayData?.ai_recommendation?.missing_docs?.length > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6">
-          <h3 className="text-orange-800 font-bold flex items-center gap-2 text-lg">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            Missing Mandatory Documents
-          </h3>
-          <p className="text-orange-700 text-sm mt-1 mb-3">The following required documents were not found in the bidder's submission:</p>
-          <ul className="list-disc list-inside text-orange-900 text-sm space-y-1 font-medium ml-2">
+        <section id="sec-missing" className="notice notice-warn !p-0 !block scroll-mt-14">
+          <div className="px-5 py-3.5">
+            <h2 className="text-[15px] font-medium text-amber-800">Missing mandatory documents</h2>
+            <p className="text-[13px] mt-0.5">These required documents were not found in the bidder's submission.</p>
+          </div>
+          <ul className="px-5 pb-2">
             {displayData.ai_recommendation.missing_docs.map(doc => (
-              <li key={doc}>{doc.replace(/_/g, ' ')}</li>
+              <li key={doc} className="flex items-center gap-2 min-h-9 border-t border-amber-200 text-[14px] text-amber-900">
+                {doc.replace(/_/g, ' ')}
+              </li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
-      {/* AI Recommendation Engine */}
+      {/* AI Recommendation */}
       {displayData?.ai_recommendation && (
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 mb-6 overflow-hidden">
-          <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
-            <h2 className="text-slate-800 font-bold flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-              AI Recommendation Engine
-            </h2>
-            <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Advisory Only</span>
+        <section id="sec-verdict" className="card @container scroll-mt-14" aria-labelledby="ai-rec-title">
+          <div className="card-head border-b border-slate-100">
+            <h2 id="ai-rec-title" className="card-title">AI recommendation</h2>
+            <span className="pill pill-neutral">Advisory only</span>
           </div>
-          <div className="p-6">
-            <div className="flex items-start gap-6">
-              <div className="shrink-0">
-                <div className={`px-6 py-3 rounded text-lg font-bold tracking-wider border ${
-                  aiDecision === 'RECOMMENDED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                  aiDecision === 'NOT RECOMMENDED' ? 'bg-red-50 text-red-700 border-red-200' :
-                  'bg-amber-50 text-amber-700 border-amber-200'
-                }`}>
-                  {aiDecision}
+          <div className="px-5 py-4 grid gap-x-8 gap-y-4 @xl:grid-cols-[minmax(0,13rem)_1fr]">
+            <div
+              className="rounded-md px-4 py-3 self-start"
+              style={{
+                background: decisionTone === 'ok' ? '#ecf8f0' : decisionTone === 'bad' ? '#fdf0ee' : '#fff8e6',
+                boxShadow: `inset 3px 0 0 ${decisionTone === 'ok' ? '#2e7d32' : decisionTone === 'bad' ? '#c4242a' : '#b45309'}`,
+              }}
+            >
+              <div className="label">Recommendation</div>
+              <div className="mt-1 flex items-center gap-2 text-[24px] leading-tight">
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ background: decisionTone === 'ok' ? '#2e7d32' : decisionTone === 'bad' ? '#c4242a' : '#b45309' }}
+                  aria-hidden="true"
+                />
+                {aiDecision}
+              </div>
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[14px] font-medium mb-1">Reasoning</h3>
+              <p className="text-[14px] text-slate-700 leading-relaxed max-w-prose">{aiReasoning}</p>
+
+              {aiRedFlags.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-[14px] font-medium mb-1">
+                    Red flags <span className="text-slate-500 font-normal num">({aiRedFlags.length})</span>
+                  </h3>
+                  <ul>
+                    {aiRedFlags.map((flag, idx) => (
+                      <li key={idx} className="flex items-start gap-3 py-2.5 border-t border-slate-100 text-[14px] text-slate-800">
+                        <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" aria-hidden="true" />
+                        <span>{flag}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Contradictions: the officer's next action when the data disagrees with the bidder */}
+      <div id="sec-conflicts" className="scroll-mt-14 empty:hidden">
+        <ContradictionReview 
+          contradictions={displayData?.active_contradictions || displayData?.contradictions || []} 
+          bidderId={displayBidderId} 
+        />
+      </div>
+
+      {/* Procurement Officer Final Review */}
+      <section id="sec-decision" className="card scroll-mt-14" aria-labelledby="decision-title">
+        <div className="card-head border-b border-slate-100">
+          <h2 id="decision-title" className="card-title">Officer's final decision</h2>
+          <span className="card-note">Authoritative · supersedes the AI recommendation</span>
+        </div>
+        <div className="px-5 py-4" aria-live="polite">
+          {poDecision ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="label">Decision recorded for {displayBidderId}</div>
+                <div className="mt-1 flex items-center gap-2 text-[24px] leading-tight">
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ background: poDecision === 'Approve' ? '#2e7d32' : poDecision === 'Reject' ? '#c4242a' : '#b45309' }}
+                    aria-hidden="true"
+                  />
+                  {poDecision}
                 </div>
               </div>
-              <div className="flex-1">
-                <h4 className="text-slate-500 text-sm font-bold uppercase tracking-wider mb-1">AI Reasoning</h4>
-                <p className="text-slate-700 text-sm leading-relaxed mb-4">{aiReasoning}</p>
-                
-                {aiRedFlags.length > 0 && (
+              <button onClick={() => setPoDecision(null)} className="btn">Revoke decision</button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <p className="text-[14px] text-slate-700 max-w-md">
+                Review the AI recommendation, the registry checks and the document evidence, then record the final
+                decision for <span className="font-medium text-ink whitespace-nowrap">{displayBidderId}</span>.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => setPoDecision('Approve')} className="btn btn-lg btn-primary">
+                  Approve bidder
+                </button>
+                <button onClick={() => setPoDecision('Request Clarification')} className="btn btn-lg">
+                  Request clarification
+                </button>
+                {confirmReject ? (
                   <>
-                    <h4 className="text-slate-500 text-sm font-bold uppercase tracking-wider mb-2">Red Flags</h4>
-                    <ul className="space-y-2">
-                      {aiRedFlags.map((flag, idx) => (
-                        <li key={idx} className="text-red-700 text-sm flex items-start gap-2 bg-red-50 border border-red-100 p-2 rounded">
-                          <svg className="w-4 h-4 mt-0.5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                          {flag}
-                        </li>
-                      ))}
-                    </ul>
+                    <button onClick={() => { setPoDecision('Reject'); setConfirmReject(false); }} className="btn btn-lg btn-danger" autoFocus>
+                      Confirm rejection
+                    </button>
+                    <button onClick={() => setConfirmReject(false)} className="btn btn-lg">Cancel</button>
                   </>
+                ) : (
+                  <button onClick={() => setConfirmReject(true)} className="btn btn-lg btn-danger">
+                    Reject bidder
+                  </button>
                 )}
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </section>
 
-      {/* Procurement Officer Final Review */}
-      <div className={`rounded-lg shadow-sm border mb-6 overflow-hidden ${poDecision ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
-        <div className={`px-6 py-3 border-b flex justify-between items-center ${poDecision ? 'bg-blue-100 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
-          <h2 className="text-slate-800 font-bold flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            Procurement Officer Final Review
-          </h2>
-          <span className="text-[10px] text-blue-600 uppercase tracking-widest font-bold">Authoritative Decision</span>
+      {/* Registry checks: one row per hard filter */}
+      <section id="sec-checks" className="card scroll-mt-14" aria-labelledby="checks-title">
+        <div className="card-head">
+          <h2 id="checks-title" className="card-title">Registry checks</h2>
+          <span className="card-note">Government portal integration layer (simulated)</span>
         </div>
-        <div className="p-6 flex flex-col items-center">
-          {poDecision ? (
-            <div className="text-center">
-              <div className={`inline-block px-8 py-4 rounded-lg text-2xl font-black uppercase tracking-widest border-2 shadow-lg mb-4 ${
-                poDecision === 'Approve' ? 'bg-emerald-100 text-emerald-700 border-emerald-500' :
-                poDecision === 'Reject' ? 'bg-red-100 text-red-700 border-red-500' :
-                'bg-amber-100 text-amber-700 border-amber-500'
-              }`}>
-                {poDecision}
-              </div>
-              <p className="text-slate-500 text-sm">Final decision recorded. This supersedes the AI Recommendation.</p>
-              <button onClick={() => setPoDecision(null)} className="mt-4 text-xs text-blue-500 hover:underline">Revoke Decision</button>
+        <div>
+          {displayData?.hard_filters && Object.entries(displayData.hard_filters).map(([key, val]) => (
+            <div key={key} className="row">
+              <span className="text-[14px] text-slate-800">{checkLabel(key)}</span>
+              {checkPill(val)}
             </div>
-          ) : (
+          ))}
+
+          {visualAuthResult && (
+            <div className="row">
+              <span className="text-[14px] text-slate-800">Signature and stamp authenticity</span>
+              {visualAuthResult.is_signed_and_stamped
+                ? <span className="pill pill-ok">Verified</span>
+                : <span className="pill pill-bad">Failed (unsigned)</span>}
+            </div>
+          )}
+
+          {/* Dynamically Extracted Rules */}
+          {tenderRules?.length > 0 && (
             <>
-              <p className="text-slate-600 text-sm mb-6 text-center max-w-2xl">
-                Review the AI Recommendation, Hard Filters, and Document Evidence above. Please render the final authoritative procurement decision for <strong>{displayBidderId}</strong>.
-              </p>
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => setPoDecision('Approve')}
-                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow transition-colors"
-                >
-                  Approve Bidder
-                </button>
-                <button 
-                  onClick={() => setPoDecision('Request Clarification')}
-                  className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded shadow transition-colors"
-                >
-                  Request Clarification
-                </button>
-                <button 
-                  onClick={() => setPoDecision('Reject')}
-                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded shadow transition-colors"
-                >
-                  Reject Bidder
-                </button>
+              <div className="px-5 pt-3 pb-1 border-t border-slate-100 text-[12px] text-slate-500">
+                Tender-specific rules (AI extracted)
               </div>
+              {tenderRules.map((rule, idx) => (
+                <div key={idx} className="row !min-h-[52px]">
+                  <div className="min-w-0">
+                    <div className="text-[14px] text-slate-800 truncate">{rule.clause}</div>
+                    <div className="text-[12px] text-slate-500 truncate max-w-[28rem]">{rule.description}</div>
+                  </div>
+                  <span className="pill pill-ok">Applied</span>
+                </div>
+              ))}
             </>
           )}
         </div>
-      </div>
+      </section>
 
-      <GovDocPanel bidderDetails={displayData?.bidder_details} />
-        <ExperiencePanel />
-        <TechnicalMatrix />
+      {/* ── CA Turnover Verification Card (shown after upload) ── */}
+      <div id="sec-turnover" className="scroll-mt-14 empty:hidden"><TurnoverVerificationCard /></div>
 
+      <div id="sec-docs" className="scroll-mt-14 empty:hidden"><GovDocPanel bidderDetails={displayData?.bidder_details} /></div>
+      <div id="sec-experience" className="scroll-mt-14 empty:hidden"><ExperiencePanel /></div>
+      <div id="sec-specs" className="scroll-mt-14 empty:hidden"><TechnicalMatrix /></div>
 
-      <EvidenceGraph graphData={displayData?.graph_data || { nodes: [], links: [] }} />
+      <div id="sec-graph" className="scroll-mt-14 empty:hidden"><EvidenceGraph graphData={displayData?.graph_data || { nodes: [], links: [] }} /></div>
       
-      <ContradictionReview 
-        contradictions={displayData?.active_contradictions || displayData?.contradictions || []} 
-        bidderId={displayBidderId} 
-      />
-      
-    </div>
+    </RevealOnMount>
   );
 }

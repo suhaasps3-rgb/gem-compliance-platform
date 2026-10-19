@@ -1,5 +1,7 @@
 // src/components/Layout/SplitScreen.jsx
 // Resizable split panel with drag divider, minimize toggle, and Lenis smooth scroll on the right panel.
+// Desktop: documents on a white sheet at the left, the case on the page ground at the right.
+// Phone: one pane at a time, chosen from the bottom tab bar (state lives in App).
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Lenis from 'lenis';
 
@@ -7,7 +9,7 @@ const MIN_LEFT_PCT = 15;
 const MAX_LEFT_PCT = 80;
 const DEFAULT_LEFT_PCT = 40;
 
-export default function SplitScreen({ left, right }) {
+export default function SplitScreen({ left, right, mobilePane = 'case' }) {
   const [leftPct, setLeftPct] = useState(DEFAULT_LEFT_PCT);
   const [minimized, setMinimized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -29,9 +31,10 @@ export default function SplitScreen({ left, right }) {
       smoothWheel: true,
     });
     lenisRef.current = lenis;
-    function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
-    requestAnimationFrame(raf);
-    return () => lenis.destroy();
+    let frame;
+    function raf(time) { lenis.raf(time); frame = requestAnimationFrame(raf); }
+    frame = requestAnimationFrame(raf);
+    return () => { cancelAnimationFrame(frame); lenis.destroy(); };
   }, []);
 
   // ── Drag logic ──
@@ -81,73 +84,71 @@ export default function SplitScreen({ left, right }) {
   const effectivePct = minimized ? 0 : leftPct;
 
   return (
-    <div
-      ref={containerRef}
-      className="flex flex-1 overflow-hidden"
-      style={{ height: 'calc(100vh - 48px)' }}
-    >
-      {/* ── Left Panel (PDF Viewer) ── */}
-      <section
-        className="flex flex-col overflow-hidden relative"
-        style={{
-          width: `${effectivePct}%`,
-          transition: isDragging ? 'none' : 'width 0.2s ease',
-          minWidth: minimized ? 0 : undefined,
-        }}
-      >
-        {!minimized && (
-          <div className="flex flex-col h-full overflow-auto">{left}</div>
-        )}
-        {/* Transparent drag shield — blocks iframe from stealing mouse events during drag */}
-        {isDragging && (
-          <div className="absolute inset-0 z-50" style={{ cursor: 'col-resize' }} />
-        )}
-      </section>
-
-      {/* ── Drag Divider ── */}
+    <div className="flex flex-col flex-1 min-h-0">
       <div
-        onMouseDown={onMouseDown}
-        className="relative flex items-center justify-center w-2.5 shrink-0 bg-slate-200 hover:bg-blue-200 cursor-col-resize group transition-colors z-10 select-none"
-        title="Drag to resize"
+        ref={containerRef}
+        className="flex flex-1 min-h-0 overflow-hidden px-2 pb-2 pt-2 md:pt-0 md:px-2"
       >
-        {/* Drag handle dots */}
-        <div className="flex flex-col gap-1 items-center">
-          {[0,1,2,3,4].map(i => (
-            <div key={i} className="w-1 h-1 rounded-full bg-slate-400 group-hover:bg-blue-500 transition-colors" />
-          ))}
-        </div>
-
-        {/* Minimize / Restore button — sits on the divider */}
-        <button
-          onMouseDown={e => e.stopPropagation()}
-          onClick={handleMinimize}
-          title={minimized ? 'Restore PDF panel' : 'Minimize PDF panel'}
-          className="absolute top-4 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white border border-slate-300 shadow-md flex items-center justify-center hover:bg-blue-500 hover:border-blue-500 hover:text-white text-slate-500 transition-all z-20"
+        {/* ── Left Panel (PDF Viewer): a white sheet ── */}
+        <section
+          aria-label="Documents"
+          className={`${mobilePane === 'docs' ? 'flex' : 'hidden'} md:flex flex-col overflow-hidden relative bg-sheet border border-slate-200 rounded-lg w-full md:[width:var(--left-w)]`}
+          style={{
+            '--left-w': `${effectivePct}%`,
+            transition: isDragging ? 'none' : 'width 0.2s ease',
+            minWidth: minimized ? 0 : undefined,
+            borderWidth: minimized ? 0 : undefined,
+          }}
         >
-          {minimized ? (
-            // Right-pointing chevron (expand)
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          ) : (
-            // Left-pointing chevron (collapse)
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
+          {!minimized && (
+            <div className="flex flex-col h-full overflow-auto">{left}</div>
           )}
-        </button>
-      </div>
+          {/* Transparent drag shield: blocks iframe from stealing mouse events during drag */}
+          {isDragging && (
+            <div className="absolute inset-0 z-50" style={{ cursor: 'col-resize' }} />
+          )}
+        </section>
 
-      {/* ── Right Panel (Dashboard) with Lenis ── */}
-      <section
-        ref={rightRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden"
-        style={{ scrollBehavior: 'auto' }} // Lenis takes over
-      >
-        <div>
-          {right}
+        {/* ── Drag Divider ── */}
+        <div
+          onMouseDown={onMouseDown}
+          className="hidden md:flex relative items-center justify-center w-3 shrink-0 cursor-col-resize group select-none"
+          title="Drag to resize"
+        >
+          <div className="h-10 w-1 rounded-full bg-slate-300 group-hover:bg-slate-400 transition-colors" />
+
+          {/* Minimize / Restore button: sits on the divider */}
+          <button
+            onMouseDown={e => e.stopPropagation()}
+            onClick={handleMinimize}
+            title={minimized ? 'Show documents' : 'Hide documents'}
+            aria-label={minimized ? 'Show documents' : 'Hide documents'}
+            className="absolute top-3 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-sheet border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-100 hover:text-ink transition-colors z-20"
+          >
+            {minimized ? (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
+              </svg>
+            ) : (
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 19l-7-7 7-7" />
+              </svg>
+            )}
+          </button>
         </div>
-      </section>
+
+        {/* ── Right Panel (Dashboard) with Lenis ── */}
+        <section
+          ref={rightRef}
+          aria-label="Case review"
+          className={`${mobilePane === 'case' ? 'block' : 'hidden'} md:block flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain`}
+          style={{ scrollBehavior: 'auto' }} // Lenis takes over
+        >
+          <div>
+            {right}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
