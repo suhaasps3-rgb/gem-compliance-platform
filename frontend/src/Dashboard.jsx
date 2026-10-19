@@ -10,6 +10,7 @@ import TurnoverVerificationCard from './components/TurnoverVerificationCard';
 
 import { useDashboardStore } from './store/dashboardStore';
 import { getClientMockDashboard } from './utils/mockFallback';
+import { RevealOnMount } from './utils/motion';
 
 // Registry check keys arrive as snake_case ids; show them as readable labels.
 const CHECK_ACRONYMS = new Set(['gst', 'gstin', 'pan', 'mca', 'epfo', 'esic', 'msme', 'cin', 'din', 'ca', 'itr', 'mii']);
@@ -173,7 +174,7 @@ export default function Dashboard({ bidderId }) {
   );
 
   return (
-    <div className="p-4 md:p-6 pt-2 md:pt-3 space-y-3">
+    <RevealOnMount className="p-4 md:p-6 pt-2 md:pt-3 space-y-3">
 
       {/* Uploaded Doc Banner */}
       {verifiedDocResult && (
@@ -416,6 +417,6 @@ export default function Dashboard({ bidderId }) {
 
       <EvidenceGraph graphData={displayData?.graph_data || { nodes: [], links: [] }} />
       
-    </div>
+    </RevealOnMount>
   );
 }

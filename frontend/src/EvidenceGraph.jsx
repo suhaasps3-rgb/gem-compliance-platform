@@ -1,4 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
+import gsap from 'gsap';
+import { reducedMotion } from './utils/motion';
 import ReactFlow, { Background, Controls, MarkerType } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -235,6 +237,25 @@ export default function EvidenceGraph({ graphData }) {
     <span className="inline-block w-3 h-3 rounded-[3px] shrink-0" style={{ background: bg, border: `1px solid ${border}` }} aria-hidden="true" />
   );
 
+  // Reveal the graph in reading order: nodes left to right, then the edges. Opacity only, because
+  // React Flow positions nodes with their own transforms.
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const root = canvasRef.current;
+    if (!root || reducedMotion()) return undefined;
+    let ctx;
+    const frame = requestAnimationFrame(() => {
+      ctx = gsap.context(() => {
+        const nodes = gsap.utils.toArray('.react-flow__node', root)
+          .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+        if (!nodes.length) return;
+        gsap.from(nodes, { opacity: 0, duration: 0.3, stagger: 0.07, ease: 'power1.out', clearProps: 'opacity' });
+        gsap.from(gsap.utils.toArray('.react-flow__edge', root), { opacity: 0, duration: 0.4, delay: 0.25, ease: 'power1.out', clearProps: 'opacity' });
+      }, root);
+    });
+    return () => { cancelAnimationFrame(frame); if (ctx) ctx.revert(); };
+  }, [rfNodes]);
+
   return (
     <section className="card overflow-hidden" aria-labelledby="graph-title">
       <style>{`
@@ -280,7 +301,7 @@ export default function EvidenceGraph({ graphData }) {
       </div>
 
       {/* Graph Canvas */}
-      <div style={{ height: 420 }}>
+      <div ref={canvasRef} style={{ height: 420 }}>
         <ReactFlow
           nodes={rfNodes}
           edges={rfEdges}

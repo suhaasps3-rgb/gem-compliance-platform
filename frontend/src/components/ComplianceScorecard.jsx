@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDashboardStore } from '../store/dashboardStore';
+import { CountUp, GrowBar } from '../utils/motion';
 
 export default function ComplianceScorecard({ displayData, bidderDetails }) {
   const { 
@@ -139,7 +140,7 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
             </div>
           ) : (
             <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-[36px] leading-none num">{score}</span>
+              <span className="text-[36px] leading-none num"><CountUp value={score} /></span>
               <span className="text-[14px] text-slate-500">/ 100</span>
             </div>
           )}
@@ -164,12 +165,12 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
         <div className="bg-sheet px-5 py-4">
           <div className="label">Evidence confidence</div>
           <div className="mt-1 text-[24px] leading-tight num">
-            {hasEvidence ? Number(evidence).toFixed(2) : <Dash />}
+            {hasEvidence ? <CountUp value={Number(evidence)} decimals={2} /> : <Dash />}
             <span className="text-[14px] text-slate-500 whitespace-nowrap"> / 1.00</span>
           </div>
           {hasEvidence && (
             <div className="mt-2.5 h-1 rounded-full bg-slate-200" role="img" aria-label={`Evidence confidence ${Number(evidence).toFixed(2)} out of 1.00`}>
-              <div className="h-1 rounded-full bg-data" style={{ width: `${Math.min(100, Math.max(0, Number(evidence) * 100))}%` }} />
+              <GrowBar className="h-1 rounded-full bg-data" style={{ width: `${Math.min(100, Math.max(0, Number(evidence) * 100))}%` }} />
             </div>
           )}
         </div>
@@ -177,12 +178,12 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
         <div className="bg-sheet px-5 py-4">
           <div className="label">Probabilistic risk</div>
           <div className="mt-1 text-[24px] leading-tight num">
-            {hasRisk ? Number(risk) : <Dash />}
+            {hasRisk ? <CountUp value={Number(risk)} decimals={Number.isInteger(Number(risk)) ? 0 : 1} /> : <Dash />}
             <span className="text-[14px] text-slate-500"> / 100</span>
           </div>
           {hasRisk && (
             <div className="mt-2.5 h-1 rounded-full bg-slate-200" role="img" aria-label={`Probabilistic risk ${Number(risk)} out of 100`}>
-              <div className="h-1 rounded-full bg-slate-500" style={{ width: `${Math.min(100, Math.max(0, Number(risk)))}%` }} />
+              <GrowBar className="h-1 rounded-full bg-slate-500" style={{ width: `${Math.min(100, Math.max(0, Number(risk)))}%` }} />
             </div>
           )}
         </div>

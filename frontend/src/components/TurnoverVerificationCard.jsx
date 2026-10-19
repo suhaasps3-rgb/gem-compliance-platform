@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDashboardStore } from '../store/dashboardStore';
+import { GrowBar } from '../utils/motion';
 
 export default function TurnoverVerificationCard() {
   const r = useDashboardStore(s => s.turnoverParseResult);
@@ -31,7 +32,7 @@ export default function TurnoverVerificationCard() {
         <div className="relative mt-7 mb-9">
           <div className="relative h-2 rounded-full bg-slate-200" role="img"
                aria-label={`Turnover ${cr} crore, against a minimum of ${req} crore and an MSME cap of ${cap} crore`}>
-            <div className="absolute inset-y-0 left-0 rounded-full bg-data" style={{ width: pct(cr) }} />
+            <GrowBar className="absolute inset-y-0 left-0 rounded-full bg-data" style={{ width: pct(cr) }} />
           </div>
           {[[req, 'Minimum required', `₹${req} Cr`], [cap, 'MSME cap', `₹${cap} Cr`]].map(([v, name, val]) => (
             <div key={name} className="absolute top-0" style={{ left: pct(v) }}>
