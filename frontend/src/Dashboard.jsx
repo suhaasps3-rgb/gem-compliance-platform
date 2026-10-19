@@ -7,10 +7,24 @@ import ComplianceScorecard from './components/ComplianceScorecard';
 import ExperiencePanel from './components/ExperiencePanel';
 import TechnicalMatrix from './components/TechnicalMatrix';
 import TurnoverVerificationCard from './components/TurnoverVerificationCard';
+import CaseBrief from './components/CaseBrief';
+import SectionNav from './components/SectionNav';
 
 import { useDashboardStore } from './store/dashboardStore';
 import { getClientMockDashboard } from './utils/mockFallback';
 import { RevealOnMount } from './utils/motion';
+
+// Sections the jump bar can offer. It lists only those that are on screen.
+const NAV_SECTIONS = [
+  { id: 'sec-verdict', label: 'Verdict' },
+  { id: 'sec-decision', label: 'Decision' },
+  { id: 'sec-checks', label: 'Registry checks' },
+  { id: 'sec-turnover', label: 'Turnover' },
+  { id: 'sec-docs', label: 'Documents' },
+  { id: 'sec-experience', label: 'Experience' },
+  { id: 'sec-specs', label: 'Specifications' },
+  { id: 'sec-graph', label: 'Evidence graph' },
+];
 
 // Registry check keys arrive as snake_case ids; show them as readable labels.
 const CHECK_ACRONYMS = new Set(['gst', 'gstin', 'pan', 'mca', 'epfo', 'esic', 'msme', 'cin', 'din', 'ca', 'itr', 'mii']);
@@ -29,6 +43,8 @@ export default function Dashboard({ bidderId }) {
   const clearAllDocs = useDashboardStore(s => s.clearAllDocs);
   const visualAuthResult = useDashboardStore(s => s.visualAuthResult);
   const turnoverParseResult = useDashboardStore(s => s.turnoverParseResult);
+  const technicalMatrixResult = useDashboardStore(s => s.technicalMatrixResult);
+  const experienceResult = useDashboardStore(s => s.experienceResult);
   const complianceBlockedReason = useDashboardStore(s => s.complianceBlockedReason);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -162,6 +178,31 @@ export default function Dashboard({ bidderId }) {
   const decisionTone = aiDecision === 'Approve' ? 'ok' : aiDecision === 'Reject' ? 'bad' : 'warn';
   const pipeline = ['AI interprets', 'Deterministic rules validate', 'Graph explains', 'AI recommends', 'Officer decides'];
 
+  // ── At a glance: what is verified, and what the officer has to look at ──
+  const briefChecks = Object.entries(displayData?.hard_filters || {}).map(([key, status]) => ({ key, label: checkLabel(key), status }));
+  if (visualAuthResult) {
+    briefChecks.push({ key: 'signature', label: 'Signature and stamp authenticity', status: visualAuthResult.is_signed_and_stamped ? 'PASS' : 'FAIL' });
+  }
+  const failedChecks = briefChecks.filter((c) => c.status === 'FAIL').length;
+  const unverifiedChecks = briefChecks.filter((c) => c.status !== 'PASS' && c.status !== 'FAIL').length;
+  const conflictCount = (displayData?.active_contradictions || displayData?.contradictions || []).length;
+  const missingDocCount = displayData?.ai_recommendation?.missing_docs?.length || 0;
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const attention = [];
+  if (complianceBlockedReason) attention.push({ id: 'blocked', tone: 'bad', text: 'Score blocked: an uploaded document belongs to a different entity', target: 'sec-verdict' });
+  if (isVisualAuthFailed) attention.push({ id: 'sig', tone: 'bad', text: 'Missing signature or rubber stamp on the uploaded document', target: 'sec-checks' });
+  if (failedChecks > 0) attention.push({ id: 'failed', tone: 'bad', text: `${plural(failedChecks, 'registry check', 'registry checks')} failed`, target: 'sec-checks' });
+  if (aiRedFlags.length > 0) attention.push({ id: 'flags', tone: 'bad', text: `${plural(aiRedFlags.length, 'red flag', 'red flags')} raised in the AI recommendation`, target: 'sec-verdict' });
+  if (conflictCount > 0) attention.push({ id: 'conflicts', tone: 'bad', text: `${plural(conflictCount, 'contradiction', 'contradictions')} between the bidder's claims and the registries`, target: 'sec-conflicts' });
+  if (missingDocCount > 0) attention.push({ id: 'missing', tone: 'warn', text: `${plural(missingDocCount, 'mandatory document', 'mandatory documents')} missing`, target: 'sec-missing' });
+  if (unverifiedChecks > 0) attention.push({ id: 'unverified', tone: 'warn', text: `${plural(unverifiedChecks, 'registry check', 'registry checks')} could not be verified`, target: 'sec-checks' });
+  if (technicalMatrixResult && technicalMatrixResult.overall_result !== 'PASS') {
+    attention.push({ id: 'tech', tone: technicalMatrixResult.overall_result === 'FAIL' ? 'bad' : 'warn', text: technicalMatrixResult.overall_result === 'FAIL' ? 'Technical specifications fail the tender requirements' : 'Technical specifications are incomplete', target: 'sec-specs' });
+  }
+  if (experienceResult && experienceResult.result && experienceResult.result !== 'PASS') {
+    attention.push({ id: 'exp', tone: experienceResult.result === 'FAIL' ? 'bad' : 'warn', text: experienceResult.result === 'FAIL' ? 'Experience requirement not met' : 'Experience evidence is insufficient', target: 'sec-experience' });
+  }
+
   const AlertIcon = (
     <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -178,6 +219,7 @@ export default function Dashboard({ bidderId }) {
 
   return (
     <RevealOnMount className="p-4 md:p-6 pt-2 md:pt-3 space-y-3">
+      <SectionNav sections={NAV_SECTIONS} />
 
       {/* Uploaded Doc Banner */}
       {verifiedDocResult && (
@@ -258,9 +300,12 @@ export default function Dashboard({ bidderId }) {
       {/* The score, and what it is made of */}
       <ComplianceScorecard displayData={displayData} bidderDetails={displayData?.bidder_details} />
 
+      {/* What is verified and what needs the officer, with a jump to each */}
+      <CaseBrief checks={briefChecks} attention={attention} />
+
       {/* Missing Mandatory Documents */}
       {displayData?.ai_recommendation?.missing_docs?.length > 0 && (
-        <section className="notice notice-warn !p-0 !block">
+        <section id="sec-missing" className="notice notice-warn !p-0 !block scroll-mt-14">
           <div className="px-5 py-3.5">
             <h2 className="text-[15px] font-medium text-amber-800">Missing mandatory documents</h2>
             <p className="text-[13px] mt-0.5">These required documents were not found in the bidder's submission.</p>
@@ -277,7 +322,7 @@ export default function Dashboard({ bidderId }) {
 
       {/* AI Recommendation */}
       {displayData?.ai_recommendation && (
-        <section className="card @container" aria-labelledby="ai-rec-title">
+        <section id="sec-verdict" className="card @container scroll-mt-14" aria-labelledby="ai-rec-title">
           <div className="card-head border-b border-slate-100">
             <h2 id="ai-rec-title" className="card-title">AI recommendation</h2>
             <span className="pill pill-neutral">Advisory only</span>
@@ -319,13 +364,15 @@ export default function Dashboard({ bidderId }) {
       )}
 
       {/* Contradictions: the officer's next action when the data disagrees with the bidder */}
-      <ContradictionReview 
-        contradictions={displayData?.active_contradictions || displayData?.contradictions || []} 
-        bidderId={displayBidderId} 
-      />
+      <div id="sec-conflicts" className="scroll-mt-14 empty:hidden">
+        <ContradictionReview 
+          contradictions={displayData?.active_contradictions || displayData?.contradictions || []} 
+          bidderId={displayBidderId} 
+        />
+      </div>
 
       {/* Procurement Officer Final Review */}
-      <section className="card" aria-labelledby="decision-title">
+      <section id="sec-decision" className="card scroll-mt-14" aria-labelledby="decision-title">
         <div className="card-head border-b border-slate-100">
           <h2 id="decision-title" className="card-title">Officer's final decision</h2>
           <span className="card-note">Authoritative · supersedes the AI recommendation</span>
@@ -378,7 +425,7 @@ export default function Dashboard({ bidderId }) {
       </section>
 
       {/* Registry checks: one row per hard filter */}
-      <section className="card" aria-labelledby="checks-title">
+      <section id="sec-checks" className="card scroll-mt-14" aria-labelledby="checks-title">
         <div className="card-head">
           <h2 id="checks-title" className="card-title">Registry checks</h2>
           <span className="card-note">Government portal integration layer (simulated)</span>
@@ -421,13 +468,13 @@ export default function Dashboard({ bidderId }) {
       </section>
 
       {/* ── CA Turnover Verification Card (shown after upload) ── */}
-      <TurnoverVerificationCard />
+      <div id="sec-turnover" className="scroll-mt-14 empty:hidden"><TurnoverVerificationCard /></div>
 
-      <GovDocPanel bidderDetails={displayData?.bidder_details} />
-      <ExperiencePanel />
-      <TechnicalMatrix />
+      <div id="sec-docs" className="scroll-mt-14 empty:hidden"><GovDocPanel bidderDetails={displayData?.bidder_details} /></div>
+      <div id="sec-experience" className="scroll-mt-14 empty:hidden"><ExperiencePanel /></div>
+      <div id="sec-specs" className="scroll-mt-14 empty:hidden"><TechnicalMatrix /></div>
 
-      <EvidenceGraph graphData={displayData?.graph_data || { nodes: [], links: [] }} />
+      <div id="sec-graph" className="scroll-mt-14 empty:hidden"><EvidenceGraph graphData={displayData?.graph_data || { nodes: [], links: [] }} /></div>
       
     </RevealOnMount>
   );
