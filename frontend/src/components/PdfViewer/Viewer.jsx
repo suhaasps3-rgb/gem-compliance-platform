@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useDashboardStore } from '../../store/dashboardStore';
 import mockData from '../../data/mock_dataset.json';
 import { getClientMockDashboard } from '../../utils/mockFallback';
+import { makeZip } from '../../utils/zip';
 
 const DOC_URLS = {
   tender: '/tender_demo.pdf',
@@ -144,6 +145,8 @@ export default function Viewer({ currentBidder }) {
   const [customPdfUrl, setCustomPdfUrl]   = useState(null);
   const [uploadedFileName, setUploadedFileName] = useState(null);
   const [verifying, setVerifying]         = useState(false);
+  const [zipping, setZipping]             = useState(false);
+  const [zipNote, setZipNote]             = useState('');
   const [verifyStatus, setVerifyStatus]   = useState(null);
   const visualAuthResult = useDashboardStore((s) => s.visualAuthResult);
 
@@ -461,6 +464,52 @@ export default function Viewer({ currentBidder }) {
     }
   };
 
+  // One ZIP with every document on file for this bidder, so the officer doesn't download them one by one.
+  const handleDownloadAll = async () => {
+    setZipping(true);
+    setZipNote('');
+    try {
+      const bidderUrl = (key) => {
+        if (key === 'turnover') {
+          if (currentBidderId.includes('acme')) return '/ca_turnover_acme.pdf';
+          if (currentBidderId.includes('beta')) return '/ca_turnover_beta.pdf';
+          if (currentBidderId.includes('gamma')) return '/ca_turnover_gamma.pdf';
+        }
+        return DOC_URLS[key];
+      };
+      const seen = new Set();
+      const files = [];
+      let failed = 0;
+      for (const key of Object.keys(DOC_URLS)) {
+        const url = bidderUrl(key);
+        if (seen.has(url)) continue; // some documents share one sample file
+        seen.add(url);
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(String(res.status));
+          const title = (DOC_META[key]?.title || key).replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_');
+          files.push({ name: `${String(files.length + 1).padStart(2, '0')}_${title}.pdf`, data: new Uint8Array(await res.arrayBuffer()) });
+        } catch {
+          failed += 1;
+        }
+      }
+      if (!files.length) throw new Error('none');
+      const blobUrl = URL.createObjectURL(makeZip(files));
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${currentBidderName.replace(/[^\w]+/g, '_')}_documents.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      setZipNote(failed ? `${files.length} documents zipped, ${failed} could not be fetched.` : `${files.length} documents zipped.`);
+    } catch {
+      setZipNote('Could not build the ZIP. Check your connection and try again.');
+    } finally {
+      setZipping(false);
+    }
+  };
+
   const handleResetUpload = () => {
     setCustomPdfUrl(null);
     setUploadedFileName(null);
@@ -586,7 +635,11 @@ export default function Viewer({ currentBidder }) {
               <a href={pdfUrl} download className="btn btn-lg">
                 Download
               </a>
+              <button onClick={handleDownloadAll} disabled={zipping} className="btn btn-lg" aria-busy={zipping}>
+                {zipping ? 'Zipping…' : 'Download all (ZIP)'}
+              </button>
             </div>
+            <p className="text-[12px] text-slate-500 mt-2" role="status" aria-live="polite">{zipNote}</p>
           </div>
         </section>
 
