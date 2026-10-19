@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import mockData from '../data/mock_dataset.json';
 import { useDashboardStore } from '../store/dashboardStore';
+import useEscape from '../utils/useEscape';
 
 const PIPELINE_STAGES = [
   'Ingesting Tender Submissions & Decompressing Dossiers',
@@ -19,6 +20,8 @@ export default function BatchProcessor({ onClose, onSelectBidder }) {
   const [bidders, setBidders] = useState({});
   const [activeFilter, setActiveFilter] = useState('ALL'); // ALL, COMPLIANT, REVIEW, DISQUALIFIED
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEscape(() => onClose(), true);
 
   // Prepare standard bidder evaluation dataset
   const generateBidderResults = () => {
@@ -192,328 +195,288 @@ export default function BatchProcessor({ onClose, onSelectBidder }) {
     URL.revokeObjectURL(url);
   };
 
+  const outcomePill = (outcome) =>
+    outcome === 'VERIFIED_COMPLIANT' ? 'pill-ok' : outcome === 'NEEDS_REVIEW' ? 'pill-warn' : 'pill-bad';
+  const outcomeText = (outcome) => {
+    const t = String(outcome || '').replace(/_/g, ' ').toLowerCase();
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+  const riskDot = (level) => (level === 'LOW' ? '#2e7d32' : level === 'MEDIUM' ? '#b45309' : '#c4242a');
+  const riskWord = (level) => {
+    const t = String(level || '').toLowerCase();
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+
+  const COLS = 'md:grid-cols-[minmax(0,1.5fr)_4.5rem_6.5rem_5.5rem_8.5rem_auto]';
+
   return (
-    <div className="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full flex flex-col h-[85vh] overflow-hidden border-2 border-purple-600 animate-fadeIn">
-        
-        {/* ── Top Header Strip ── */}
-        <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 px-6 py-4 flex items-center justify-between shrink-0 text-white shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center text-xl">
-              ⚡
-            </div>
-            <div>
-              <h3 className="font-black text-lg tracking-wide uppercase">
-                GeM Batch Verification Pipeline
-              </h3>
-              <p className="text-xs text-purple-200">
-                Parallel statutory ingestion, OCR cross-checks, and anti-cartel clustering
-              </p>
-            </div>
+    <div className="scrim" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="batch-title"
+        onClick={(e) => e.stopPropagation()}
+        className="bg-ground rounded-lg shadow-2xl max-w-5xl w-full flex flex-col h-[85vh] overflow-hidden border border-slate-200"
+      >
+
+        {/* ── Header ── */}
+        <div className="bg-sheet px-6 py-4 flex items-start justify-between gap-4 shrink-0 border-b border-slate-200">
+          <div>
+            <h2 id="batch-title" className="text-[18px] font-medium leading-tight">Batch verification pipeline</h2>
+            <p className="text-[13px] text-slate-500 mt-1">
+              Parallel statutory ingestion, OCR cross-checks and anti-cartel clustering
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {status === 'COMPLETED' && (
-              <button
-                onClick={handleExportSummary}
-                className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
-              >
-                <span>📥 Export Audit Report</span>
+              <button onClick={handleExportSummary} className="btn">
+                Export audit report
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition text-sm font-bold"
-            >
-              ✕
+            <button onClick={onClose} className="btn !h-8 !w-8 !px-0" aria-label="Close batch mode">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>
 
         {/* ── Body ── */}
-        <div className="p-6 flex-1 overflow-y-auto bg-slate-50 space-y-6">
-          
+        <div className="p-6 flex-1 overflow-y-auto space-y-3">
+
           {/* IDLE STATE */}
           {status === 'IDLE' && (
-            <div className="max-w-2xl mx-auto py-8 space-y-6">
-              
-              {/* Primary Fast-Path Action */}
-              <div className="bg-white rounded-xl border border-purple-200 p-6 shadow-sm text-center space-y-4">
-                <div className="w-14 h-14 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-inner">
-                  ⚡
-                </div>
-                <div>
-                  <h4 className="text-lg font-black text-slate-800">
-                    Run Automated Batch Evaluation (12 Bidders)
-                  </h4>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                    Instantly evaluate all 12 submitted tender dossiers across statutory registries, 
-                    cross-entity cartel graphs, and technical parameters in parallel.
-                  </p>
-                </div>
+            <div className="max-w-2xl mx-auto py-6 space-y-3">
 
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] font-semibold text-slate-600">
-                  <span className="px-2.5 py-1 bg-slate-100 rounded-full border border-slate-200">✓ 12 Active Dossiers</span>
-                  <span className="px-2.5 py-1 bg-slate-100 rounded-full border border-slate-200">✓ MCA21 & GSTN Scans</span>
-                  <span className="px-2.5 py-1 bg-slate-100 rounded-full border border-slate-200">✓ Jaccard Cartel Scan</span>
-                  <span className="px-2.5 py-1 bg-slate-100 rounded-full border border-slate-200">✓ Technical Pass/Fail</span>
-                </div>
+              {/* Primary fast-path action */}
+              <section className="card p-6">
+                <h3 className="text-[18px] font-medium">Run automated batch evaluation (12 bidders)</h3>
+                <p className="text-[14px] text-slate-600 mt-1 max-w-lg">
+                  Evaluate all 12 submitted tender dossiers across statutory registries, cross-entity cartel graphs
+                  and technical parameters in parallel.
+                </p>
 
-                <button
-                  onClick={() => startAutonomousPipeline(12)}
-                  className="w-full py-3.5 px-6 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>⚡ Launch Autonomous Batch Pipeline</span>
+                <ul className="grid sm:grid-cols-2 gap-x-6 mt-4 text-[14px]">
+                  {['12 active dossiers', 'MCA21 and GSTN scans', 'Jaccard cartel scan', 'Technical pass/fail'].map((t) => (
+                    <li key={t} className="flex items-center gap-2 min-h-9 border-t border-slate-100">
+                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+
+                <button onClick={() => startAutonomousPipeline(12)} className="btn btn-lg btn-primary mt-5">
+                  Launch autonomous batch pipeline
                 </button>
-              </div>
+              </section>
 
-              {/* Secondary Custom ZIP Ingestion */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-3 text-center">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Or Ingest Custom Archive
-                </div>
-                <p className="text-xs text-slate-500">
+              {/* Secondary: custom ZIP ingestion */}
+              <section className="card p-6">
+                <h3 className="text-[16px] font-medium">Or ingest a custom archive</h3>
+                <p className="text-[13px] text-slate-500 mt-1">
                   Select a ZIP archive containing individual bidder document folders.
                 </p>
-                <div className="flex items-center justify-center gap-3">
-                  <input
-                    type="file"
-                    accept=".zip"
-                    onChange={(e) => setFile(e.target.files[0])}
-                    className="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
-                  />
-                  <button
-                    onClick={handleUpload}
-                    disabled={!file}
-                    className="py-1.5 px-4 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 text-white text-xs font-bold rounded-lg transition cursor-pointer"
-                  >
+                <div className="flex flex-wrap items-center gap-3 mt-4">
+                  <label className="flex-1 min-w-[14rem]">
+                    <span className="sr-only">ZIP archive</span>
+                    <input
+                      type="file"
+                      accept=".zip"
+                      onChange={(e) => setFile(e.target.files[0])}
+                      className="block w-full text-[13px] text-slate-600 cursor-pointer border border-slate-300 rounded-md bg-sheet file:mr-3 file:h-9 file:px-3 file:border-0 file:border-r file:border-slate-300 file:bg-slate-100 file:text-[13px] file:font-medium file:text-ink hover:file:bg-slate-200"
+                    />
+                  </label>
+                  <button onClick={handleUpload} disabled={!file} className="btn btn-lg">
                     Process ZIP
                   </button>
                 </div>
-              </div>
+              </section>
 
             </div>
           )}
 
-          {/* UPLOADING SPINNER */}
+          {/* UPLOADING */}
           {status === 'UPLOADING' && (
-            <div className="text-center py-24 flex flex-col items-center justify-center space-y-4">
-              <div className="w-14 h-14 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-              <h3 className="text-base font-bold text-slate-700">Decompressing and verifying archive...</h3>
+            <div role="status" className="text-center py-24 flex flex-col items-center justify-center gap-4">
+              <div className="w-8 h-8 border-[3px] border-slate-200 border-t-ink rounded-full animate-spin" aria-hidden="true"></div>
+              <p className="text-[15px] text-slate-700">Decompressing and verifying archive…</p>
             </div>
           )}
 
           {/* PROCESSING & COMPLETED STATE */}
           {(status === 'PROCESSING' || status === 'COMPLETED' || status === 'FAILED') && (
-            <div className="space-y-6">
-              
-              {/* Overall Progress Banner */}
-              <div className="bg-white p-5 rounded-xl shadow-xs border border-slate-200 space-y-3">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold uppercase tracking-wider text-purple-600">
-                        {status === 'PROCESSING' ? 'Processing Pipeline Active' : 'Pipeline Execution Finished'}
-                      </span>
-                      {status === 'PROCESSING' && (
-                        <span className="w-2 h-2 rounded-full bg-purple-600 animate-ping"></span>
-                      )}
+            <div className="space-y-3">
+
+              {/* Overall progress */}
+              <section className="card px-5 py-4" aria-live="polite">
+                <div className="flex justify-between items-end gap-4">
+                  <div className="min-w-0">
+                    <div className="text-[13px] text-slate-500">
+                      {status === 'PROCESSING' ? 'Pipeline running' : 'Pipeline finished'}
                     </div>
-                    <h4 className="font-black text-slate-800 text-base mt-0.5">
-                      {status === 'PROCESSING' 
+                    <h3 className="text-[16px] font-medium mt-0.5">
+                      {status === 'PROCESSING'
                         ? PIPELINE_STAGES[currentStageIndex]
-                        : `Successfully Evaluated ${progress.total} Bidder Dossiers`}
-                    </h4>
+                        : `Evaluated ${progress.total} bidder dossiers`}
+                    </h3>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-black text-purple-700 font-mono">
+                  <div className="text-right shrink-0">
+                    <div className="text-[24px] leading-none num">
                       {Math.round((progress.processed / Math.max(1, progress.total)) * 100)}%
                     </div>
-                    <div className="text-[11px] text-slate-500 font-medium">
+                    <div className="text-[12px] text-slate-500 mt-1 num">
                       {progress.processed} of {progress.total} completed
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner">
-                  <div 
-                    className="bg-gradient-to-r from-purple-600 to-indigo-600 h-3 rounded-full transition-all duration-300 ease-out" 
+                <div className="mt-3 h-1.5 w-full rounded-full bg-slate-200" role="progressbar"
+                     aria-valuemin={0} aria-valuemax={100}
+                     aria-valuenow={Math.round((progress.processed / Math.max(1, progress.total)) * 100)}>
+                  <div
+                    className="h-1.5 rounded-full bg-data transition-[width] duration-300 ease-out"
                     style={{ width: `${(progress.processed / Math.max(1, progress.total)) * 100}%` }}
                   />
                 </div>
-              </div>
+              </section>
 
-              {/* Summary Stats Banner (When completed) */}
+              {/* Summary strip (when completed): one container, divided */}
               {status === 'COMPLETED' && (
-                <div className="grid grid-cols-4 gap-3">
-                  <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs text-center">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Dossiers</div>
-                    <div className="text-2xl font-black text-slate-800 mt-0.5">{allEntries.length}</div>
-                  </div>
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 shadow-xs text-center">
-                    <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Compliant</div>
-                    <div className="text-2xl font-black text-emerald-800 mt-0.5">{compliantCount}</div>
-                  </div>
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 shadow-xs text-center">
-                    <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Needs Review</div>
-                    <div className="text-2xl font-black text-amber-800 mt-0.5">{reviewCount}</div>
-                  </div>
-                  <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 shadow-xs text-center">
-                    <div className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">Disqualified</div>
-                    <div className="text-2xl font-black text-rose-800 mt-0.5">{disqualifiedCount}</div>
-                  </div>
-                </div>
+                <section aria-label="Summary" className="grid grid-cols-2 md:grid-cols-4 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+                  {[
+                    { label: 'Total dossiers', value: allEntries.length, dot: null },
+                    { label: 'Compliant', value: compliantCount, dot: '#2e7d32' },
+                    { label: 'Needs review', value: reviewCount, dot: '#b45309' },
+                    { label: 'Disqualified', value: disqualifiedCount, dot: '#c4242a' },
+                  ].map((c) => (
+                    <div key={c.label} className="bg-sheet px-5 py-3.5">
+                      <div className="label flex items-center gap-1.5">
+                        {c.dot && <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} aria-hidden="true" />}
+                        {c.label}
+                      </div>
+                      <div className="text-[24px] leading-tight mt-0.5 num">{c.value}</div>
+                    </div>
+                  ))}
+                </section>
               )}
 
-              {/* Filter Tabs */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <div className="flex items-center gap-1.5">
+              {/* Filter tabs */}
+              <div className="flex flex-wrap items-end justify-between gap-2 border-b border-slate-200 pt-1">
+                <div role="tablist" aria-label="Filter bidders" className="flex flex-wrap items-end">
                   {[
-                    { id: 'ALL', label: `All (${allEntries.length})` },
-                    { id: 'COMPLIANT', label: `Compliant (${compliantCount})` },
-                    { id: 'REVIEW', label: `Needs Review (${reviewCount})` },
-                    { id: 'DISQUALIFIED', label: `Disqualified (${disqualifiedCount})` }
+                    { id: 'ALL', label: 'All', n: allEntries.length },
+                    { id: 'COMPLIANT', label: 'Compliant', n: compliantCount },
+                    { id: 'REVIEW', label: 'Needs review', n: reviewCount },
+                    { id: 'DISQUALIFIED', label: 'Disqualified', n: disqualifiedCount }
                   ].map((f) => (
                     <button
                       key={f.id}
+                      role="tab"
+                      aria-selected={activeFilter === f.id}
                       onClick={() => setActiveFilter(f.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      className={`h-10 px-1 mr-5 text-[13px] border-b-2 -mb-px transition-colors ${
                         activeFilter === f.id
-                          ? 'bg-purple-600 text-white shadow-xs'
-                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                          ? 'text-ink font-medium border-ink'
+                          : 'text-slate-500 hover:text-ink border-transparent'
                       }`}
                     >
-                      {f.label}
+                      {f.label} <span className="num text-slate-500 font-normal">{f.n}</span>
                     </button>
                   ))}
                 </div>
 
                 {status === 'COMPLETED' && (
-                  <button
-                    onClick={() => startAutonomousPipeline(12)}
-                    className="text-xs text-purple-700 hover:text-purple-900 font-bold underline flex items-center gap-1"
-                  >
-                    <span>🔄 Re-run Batch Pipeline</span>
+                  <button onClick={() => startAutonomousPipeline(12)} className="btn mb-1.5">
+                    Re-run batch pipeline
                   </button>
                 )}
               </div>
 
-              {/* Bidder Results Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredBidders.map(([bidderId, bData]) => {
-                  const isDone = bData.status === 'COMPLETED';
-                  const isCompliant = bData.outcome === 'VERIFIED_COMPLIANT';
-                  const isReview = bData.outcome === 'NEEDS_REVIEW';
-
-                  return (
-                    <div
-                      key={bidderId}
-                      className={`bg-white border rounded-xl p-4 shadow-xs transition hover:shadow-md flex flex-col justify-between ${
-                        !isDone
-                          ? 'border-slate-200 opacity-60'
-                          : isCompliant
-                          ? 'border-emerald-200'
-                          : isReview
-                          ? 'border-amber-200'
-                          : 'border-rose-200'
-                      }`}
-                    >
-                      <div>
-                        {/* Card Header */}
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div>
-                            <span className="text-[10px] font-mono text-slate-400 block uppercase">
-                              {bidderId}
-                            </span>
-                            <h5 className="font-black text-slate-800 text-sm">
-                              {bData.name}
-                            </h5>
-                          </div>
-
-                          <span className={`text-[10px] px-2.5 py-1 rounded-md font-bold uppercase tracking-wider border ${
-                            !isDone
-                              ? 'bg-slate-100 text-slate-500 border-slate-200 animate-pulse'
-                              : isCompliant
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : isReview
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
-                          }`}>
-                            {!isDone ? 'Processing...' : bData.outcome?.replace(/_/g, ' ')}
-                          </span>
+              {/* Bidder results: one row per dossier */}
+              <section className="card overflow-hidden" aria-label="Bidder results">
+                <div className={`hidden md:grid ${COLS} gap-x-4 items-center px-5 h-9 text-[12px] text-slate-500`}>
+                  <span>Bidder</span>
+                  <span className="text-right">Score</span>
+                  <span className="text-right">Experience</span>
+                  <span>Risk</span>
+                  <span>Outcome</span>
+                  <span className="w-[7.5rem]" />
+                </div>
+                <ul>
+                  {filteredBidders.map(([bidderId, bData]) => {
+                    const isDone = bData.status === 'COMPLETED';
+                    return (
+                      <li
+                        key={bidderId}
+                        className={`border-t border-slate-100 px-5 py-3 grid gap-x-4 gap-y-1 items-center ${COLS} ${!isDone ? 'opacity-60' : ''}`}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-[14px] font-medium truncate">{bData.name}</div>
+                          <div className="text-[12px] font-mono text-slate-500 truncate">{bidderId}</div>
                         </div>
 
-                        {/* Metric Strip */}
-                        {isDone && (
-                          <div className="grid grid-cols-3 gap-2 my-3 p-2 bg-slate-50 rounded-lg border border-slate-100 text-center text-xs">
-                            <div>
-                              <span className="text-[10px] text-slate-400 block font-medium">Compliance</span>
-                              <span className={`font-black text-sm ${
-                                bData.compliance_score >= 80 ? 'text-emerald-700' :
-                                bData.compliance_score >= 50 ? 'text-amber-700' : 'text-rose-700'
-                              }`}>
-                                {bData.compliance_score}/100
-                              </span>
+                        {isDone ? (
+                          <>
+                            <div className="md:text-right text-[14px] num">
+                              <span className="md:hidden text-slate-500">Score </span>
+                              {bData.compliance_score}<span className="text-slate-500"> /100</span>
+                            </div>
+                            <div className="md:text-right text-[14px] num">
+                              <span className="md:hidden text-slate-500">Experience </span>
+                              ₹{bData.eligible_cr} <span className="text-slate-500">Cr</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[14px]">
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: riskDot(bData.risk_level) }} aria-hidden="true" />
+                              {riskWord(bData.risk_level)}
                             </div>
                             <div>
-                              <span className="text-[10px] text-slate-400 block font-medium">Experience</span>
-                              <span className="font-bold text-slate-700">
-                                ₹{bData.eligible_cr} Cr
-                              </span>
+                              <span className={`pill ${outcomePill(bData.outcome)}`}>{outcomeText(bData.outcome)}</span>
                             </div>
-                            <div>
-                              <span className="text-[10px] text-slate-400 block font-medium">Risk Level</span>
-                              <span className={`font-black text-[11px] ${
-                                bData.risk_level === 'LOW' ? 'text-emerald-600' :
-                                bData.risk_level === 'MEDIUM' ? 'text-amber-600' :
-                                bData.risk_level === 'HIGH' ? 'text-orange-600' : 'text-rose-600'
-                              }`}>
-                                {bData.risk_level}
-                              </span>
-                            </div>
-                          </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-slate-400 md:text-right">—</div>
+                            <div className="text-slate-400 md:text-right">—</div>
+                            <div className="text-slate-400">—</div>
+                            <div><span className="pill pill-neutral">Processing…</span></div>
+                          </>
                         )}
 
-                        {/* Highlight Message */}
+                        <button
+                          onClick={() => handleInspectBidder(bidderId)}
+                          className="btn md:w-[7.5rem] justify-self-start md:justify-self-end"
+                        >
+                          Inspect
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M7 17L17 7M9 7h8v8" /></svg>
+                        </button>
+
                         {isDone && (
-                          <p className="text-[11px] text-slate-600 leading-relaxed bg-white p-2 rounded border border-slate-100 mb-3">
-                            <strong className="text-slate-800">Finding: </strong>
-                            {bData.highlight}
+                          <p className="text-[13px] text-slate-600 md:col-span-6 leading-relaxed">
+                            <span className="text-slate-500">Finding. </span>{bData.highlight}
                           </p>
                         )}
-                      </div>
-
-                      {/* Card Action */}
-                      <button
-                        onClick={() => handleInspectBidder(bidderId)}
-                        className="w-full py-1.5 px-3 bg-slate-100 hover:bg-purple-600 hover:text-white text-slate-700 text-xs font-bold rounded-lg transition border border-slate-200 hover:border-purple-600 flex items-center justify-center gap-1 cursor-pointer"
-                      >
-                        <span>Inspect Dossier in Dashboard</span>
-                        <span className="text-xs">↗</span>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {filteredBidders.length === 0 && (
+                  <p className="px-5 py-6 border-t border-slate-100 text-[13px] text-slate-500">No bidders in this view.</p>
+                )}
+              </section>
 
             </div>
           )}
 
           {/* ERROR STATE */}
           {status === 'ERROR' && (
-            <div className="max-w-md mx-auto py-12 text-center space-y-4">
-              <div className="w-14 h-14 bg-rose-100 text-rose-700 rounded-full flex items-center justify-center text-2xl mx-auto">
-                ⚠️
-              </div>
-              <h4 className="font-black text-slate-800 text-base">Pipeline Ingestion Issue</h4>
-              <p className="text-xs text-slate-500">
+            <div className="max-w-md mx-auto py-12 space-y-3" role="alert">
+              <h3 className="text-[18px] font-medium">Pipeline ingestion issue</h3>
+              <p className="text-[14px] text-slate-600">
                 {errorMsg || 'Unable to connect to the external batch server.'}
               </p>
-              <button
-                onClick={() => startAutonomousPipeline(12)}
-                className="py-2.5 px-5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-md transition"
-              >
-                Run Autonomous Batch Simulation Instead
+              <button onClick={() => startAutonomousPipeline(12)} className="btn btn-lg btn-primary">
+                Run autonomous batch simulation instead
               </button>
             </div>
           )}

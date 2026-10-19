@@ -9,53 +9,67 @@ export default function TurnoverVerificationCard() {
   const cap = 15.0;
   const req = 5.0;
   const ok = cr >= req && cr <= cap;
+
+  // One scale for the whole bar so the fill is the true ratio: 0 to a little past the larger of cap and turnover.
+  const max = Math.max(cap, cr) * 1.15;
+  const pct = (v) => `${Math.min(100, Math.max(0, (v / max) * 100))}%`;
+
   return (
-    <div style={{border: ok ? '2px solid #6ee7b7' : '2px solid #fca5a5', borderRadius: 8, marginBottom: 24, background: '#fff', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)'}}>
-      <div style={{padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: ok ? '#ecfdf5' : '#fef2f2', borderBottom: ok ? '1px solid #a7f3d0' : '1px solid #fecaca'}}>
-        <h2 style={{fontWeight: 700, fontSize: 15, color: '#1e293b', margin: 0}}>CA Turnover Verification</h2>
-        <span style={{fontSize: 11, fontWeight: 700, padding: '2px 12px', borderRadius: 999, background: ok ? '#d1fae5' : '#fee2e2', color: ok ? '#065f46' : '#991b1b', border: ok ? '1px solid #6ee7b7' : '1px solid #fca5a5'}}>
-          {ok ? 'COMPLIANT' : 'NON-COMPLIANT'}
-        </span>
+    <section className="card overflow-hidden" aria-labelledby="turnover-title">
+      <div className="card-head border-b border-slate-100">
+        <h2 id="turnover-title" className="card-title">CA turnover verification</h2>
+        <span className={`pill ${ok ? 'pill-ok' : 'pill-bad'}`}>{ok ? 'Compliant' : 'Non-compliant'}</span>
       </div>
-      <div style={{padding: 24}}>
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, marginBottom: 24}}>
-          <div style={{textAlign: 'center'}}>
-            <div style={{fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4}}>Min. Required</div>
-            <div style={{fontSize: 30, fontWeight: 900, color: '#64748b'}}>Rs.{req} Cr</div>
-          </div>
-          <div style={{textAlign: 'center', padding: '16px 32px', borderRadius: 12, border: ok ? '2px solid #6ee7b7' : '2px solid #fca5a5', background: ok ? '#ecfdf5' : '#fef2f2'}}>
-            <div style={{fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 4}}>Extracted Turnover</div>
-            <div style={{fontSize: 40, fontWeight: 900, color: ok ? '#065f46' : '#991b1b'}}>Rs.{cr} Cr</div>
-            <div style={{fontSize: 11, color: '#94a3b8', marginTop: 4}}>{ext.financial_year || 'FY 2024-25'}</div>
-          </div>
-          <div style={{textAlign: 'center'}}>
-            <div style={{fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4}}>MSME Cap</div>
-            <div style={{fontSize: 30, fontWeight: 900, color: '#64748b'}}>Rs.{cap} Cr</div>
-          </div>
+
+      <div className="px-5 pt-4 pb-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[30px] leading-none num font-[700]">₹{cr} Cr</span>
+          <span className="text-[13px] text-slate-500">extracted turnover, {ext.financial_year || 'FY 2024-25'}</span>
         </div>
-        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16}}>
-          <div style={{display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 8, border: cr >= req ? '1px solid #a7f3d0' : '1px solid #fca5a5', background: cr >= req ? '#ecfdf5' : '#fef2f2'}}>
-            <span style={{fontWeight: 900, fontSize: 13, color: cr >= req ? '#065f46' : '#991b1b'}}>{cr >= req ? 'PASS' : 'FAIL'}</span>
-            <div>
-              <div style={{fontSize: 11, fontWeight: 700, color: '#334155'}}>Minimum Turnover</div>
-              <div style={{fontSize: 11, color: '#64748b'}}>Rs.{cr} Cr vs Rs.{req} Cr required</div>
-            </div>
+
+        {/* Turnover against the corridor the tender allows (minimum to MSME cap) */}
+        <div className="relative mt-7 mb-9">
+          <div className="relative h-2 rounded-full bg-slate-200" role="img"
+               aria-label={`Turnover ${cr} crore, against a minimum of ${req} crore and an MSME cap of ${cap} crore`}>
+            <div className="absolute inset-y-0 left-0 rounded-full bg-data" style={{ width: pct(cr) }} />
           </div>
-          <div style={{display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 8, border: cr <= cap ? '1px solid #a7f3d0' : '1px solid #fca5a5', background: cr <= cap ? '#ecfdf5' : '#fef2f2'}}>
-            <span style={{fontWeight: 900, fontSize: 13, color: cr <= cap ? '#065f46' : '#991b1b'}}>{cr <= cap ? 'PASS' : 'EXCEEDS'}</span>
-            <div>
-              <div style={{fontSize: 11, fontWeight: 700, color: '#334155'}}>MSME Cap Check</div>
-              <div style={{fontSize: 11, color: '#64748b'}}>Rs.{cr} Cr vs Rs.{cap} Cr cap</div>
+          {[[req, 'Minimum required', `₹${req} Cr`], [cap, 'MSME cap', `₹${cap} Cr`]].map(([v, name, val]) => (
+            <div key={name} className="absolute top-0" style={{ left: pct(v) }}>
+              <div className="w-px h-5 -mt-1.5 bg-slate-500" aria-hidden="true" />
+              <div className="absolute top-5 -translate-x-1/2 whitespace-nowrap text-center text-[12px] leading-tight">
+                <div className="text-slate-500">{name}</div>
+                <div className="text-ink num">{val}</div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div style={{display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 11, color: '#475569', borderTop: '1px solid #f1f5f9', paddingTop: 12}}>
-          {ext.company_name && <span><b>Entity:</b> {ext.company_name}</span>}
-          {ext.ca_name && <span><b>CA:</b> {ext.ca_name}</span>}
-          {ext.udin && <span><b>UDIN:</b> {ext.udin}</span>}
-          {ext.financial_year && <span><b>FY:</b> {ext.financial_year}</span>}
+          ))}
         </div>
       </div>
-    </div>
+
+      <div>
+        <div className="row">
+          <div>
+            <div className="text-[14px]">Minimum turnover</div>
+            <div className="text-[12px] text-slate-500 num">₹{cr} Cr against ₹{req} Cr required</div>
+          </div>
+          <span className={`pill ${cr >= req ? 'pill-ok' : 'pill-bad'}`}>{cr >= req ? 'Pass' : 'Fail'}</span>
+        </div>
+        <div className="row">
+          <div>
+            <div className="text-[14px]">MSME cap check</div>
+            <div className="text-[12px] text-slate-500 num">₹{cr} Cr against ₹{cap} Cr cap</div>
+          </div>
+          <span className={`pill ${cr <= cap ? 'pill-ok' : 'pill-bad'}`}>{cr <= cap ? 'Pass' : 'Exceeds'}</span>
+        </div>
+      </div>
+
+      {(ext.company_name || ext.ca_name || ext.udin || ext.financial_year) && (
+        <dl className="flex flex-wrap gap-x-6 gap-y-1 px-5 py-3 border-t border-slate-100 text-[12px] text-slate-500">
+          {ext.company_name && <div className="flex gap-1.5"><dt>Entity</dt><dd className="text-ink">{ext.company_name}</dd></div>}
+          {ext.ca_name && <div className="flex gap-1.5"><dt>CA</dt><dd className="text-ink">{ext.ca_name}</dd></div>}
+          {ext.udin && <div className="flex gap-1.5"><dt>UDIN</dt><dd className="text-ink font-mono">{ext.udin}</dd></div>}
+          {ext.financial_year && <div className="flex gap-1.5"><dt>FY</dt><dd className="text-ink">{ext.financial_year}</dd></div>}
+        </dl>
+      )}
+    </section>
   );
 }

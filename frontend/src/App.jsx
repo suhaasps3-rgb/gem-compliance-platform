@@ -4,15 +4,25 @@ import DocumentTabs from './components/PdfViewer/DocumentTabs';
 import Viewer from './components/PdfViewer/Viewer';
 import Dashboard from './Dashboard';
 import TenderConfigurator from './TenderConfigurator';
+import SatarkMark from './components/SatarkMark';
+import useEscape from './utils/useEscape';
 import { useDashboardStore } from './store/dashboardStore';
 
 import BatchProcessor from './components/BatchProcessor';
+
+const BIDDERS = [
+  { id: 'bidder-acme-001', label: 'Bidder A · Acme Corp (compliant)' },
+  { id: 'bidder-beta-002', label: 'Bidder B · Beta LLC (debarred)' },
+  { id: 'bidder-gamma-003', label: 'Bidder C · Gamma Tech (GST inactive)' },
+];
 
 function App() {
   const [currentBidder, setCurrentBidder] = useState('bidder-acme-001');
   const [cartelData, setCartelData] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [showBatchMode, setShowBatchMode] = useState(false);
+
+  useEscape(() => setCartelData(null), !!cartelData);
 
   const runCartelScan = async () => {
     setIsScanning(true);
@@ -47,51 +57,34 @@ function App() {
   if (typeof window !== 'undefined' && window.self !== window.top) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] p-6 text-center bg-slate-50 text-slate-700">
-        <div className="text-4xl mb-2">📄</div>
-        <h3 className="font-bold text-sm text-slate-900 mb-1">GeM Statutory Document</h3>
-        <p className="text-xs text-slate-500 mb-4 max-w-xs">
+        <h3 className="font-medium text-[15px] text-ink mb-1">GeM statutory document</h3>
+        <p className="text-[13px] text-slate-500 mb-4 max-w-xs">
           Official statutory certificate loaded for automated forensic compliance verification.
         </p>
-        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold">
-          ✓ Verified GeM Document Record
-        </span>
+        <span className="pill pill-ok">Verified GeM document record</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-100 font-sans text-slate-800">
-      {/* ── Top Navbar ── */}
-      <nav className="bg-slate-900 text-white px-4 py-2 flex justify-between items-center shadow-md shrink-0">
-        <div className="font-bold text-lg tracking-tight flex items-center gap-2">
-          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          GeM Compliance — AI Verification
+    <div className="flex flex-col h-screen overflow-hidden bg-ground font-sans text-ink">
+      {/* ── Top bar: the product, the scope (tender, bidder) and the officer's tools ── */}
+      <header className="shrink-0 min-h-12 px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-ground">
+        <div className="flex items-center gap-2 mr-1">
+          <SatarkMark />
+          <span className="text-[15px] font-medium leading-none">SATARK</span>
+          <span className="hidden lg:inline text-[13px] text-slate-500 leading-none">GeM compliance</span>
         </div>
 
-        <div className="flex gap-3 items-center">
-          <TenderConfigurator />
-          <button
-            onClick={() => setShowBatchMode(true)}
-            className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold px-4 py-1.5 rounded flex items-center transition shadow-sm"
-          >
-            ⚡ Batch Mode
-          </button>
-          <button
-            onClick={runCartelScan}
-            disabled={isScanning}
-            className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded flex items-center transition shadow-sm disabled:opacity-50"
-          >
-            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            {isScanning ? 'Scanning…' : 'Run Anti-Cartel Scan'}
-          </button>
-
-          <select 
-            value={currentBidder} 
+        <div className="flex items-center gap-2 min-w-0 text-[13px] text-slate-500">
+          <span className="hidden md:inline whitespace-nowrap">Tender SIH-2026</span>
+          <svg className="hidden md:block w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5l7 7-7 7" />
+          </svg>
+          <label htmlFor="bidder-select" className="sr-only">Bidder under review</label>
+          <select
+            id="bidder-select"
+            value={currentBidder}
             onChange={(e) => {
               const val = e.target.value;
               setCurrentBidder(val);
@@ -99,20 +92,50 @@ function App() {
               useDashboardStore.getState().clearAllDocs();
               useDashboardStore.getState().clearComplianceBlock();
             }}
-            className="bg-slate-800 text-white text-xs font-medium rounded px-3 py-1.5 border border-slate-700 outline-none focus:border-blue-500 cursor-pointer"
+            className="h-8 max-w-[18rem] min-w-0 rounded-md border border-slate-300 bg-sheet pl-2.5 pr-7 text-[13px] text-ink"
           >
-            <option value="bidder-acme-001">Bidder A: Acme Corp (Compliant - Green)</option>
-            <option value="bidder-beta-002">Bidder B: Beta LLC (Debarred - Yellow)</option>
-            <option value="bidder-gamma-003">Bidder C: Gamma Tech (GST Inactive - Red)</option>
+            {BIDDERS.map((b) => (
+              <option key={b.id} value={b.id}>{b.label}</option>
+            ))}
           </select>
+        </div>
 
-          <div className="text-sm font-medium text-slate-300 bg-slate-800 px-3 py-1.5 rounded">
-            Officer: Inspector Raj
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <TenderConfigurator />
+          <button onClick={() => setShowBatchMode(true)} className="btn" title="Batch mode" aria-label="Batch mode">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M4 6h16M4 12h16M4 18h10" />
+            </svg>
+            <span className="hidden xl:inline">Batch mode</span>
+          </button>
+          <button
+            onClick={runCartelScan}
+            disabled={isScanning}
+            className="btn"
+            title="Run anti-cartel scan"
+            aria-label="Run anti-cartel scan"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="hidden xl:inline">{isScanning ? 'Scanning…' : 'Run anti-cartel scan'}</span>
+            <span className="xl:hidden sr-only">{isScanning ? 'Scanning…' : 'Run anti-cartel scan'}</span>
+          </button>
+
+          <div className="hidden sm:flex items-center gap-2 pl-2 text-[13px]">
+            <span
+              className="w-7 h-7 rounded-full grid place-items-center text-[12px] font-medium"
+              style={{ background: '#e4ecf6', color: '#23405f' }}
+              aria-hidden="true"
+            >
+              IR
+            </span>
+            <span className="hidden lg:inline text-ink">Inspector Raj</span>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* ── 40/60 Split Screen (takes remaining height) ── */}
+      {/* ── Documents on the left, the case on the right ── */}
       <SplitScreen
         left={
           <div className="flex flex-col h-full p-3">
@@ -123,87 +146,85 @@ function App() {
         right={<Dashboard bidderId={currentBidder} />}
       />
 
-      {/* ── Anti-Cartel Modal ── */}
+      {/* ── Anti-cartel dialog ── */}
       {cartelData && (
-        <div className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden border-2 border-red-500">
-            <div className="bg-red-600 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center text-white">
-                <svg className="w-6 h-6 mr-3 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <h3 className="font-bold text-xl tracking-wide uppercase">
-                  Investigative Lead: Cartelization Detected
-                </h3>
+        <div className="scrim" onClick={() => setCartelData(null)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cartel-title"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-sheet rounded-lg shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200"
+          >
+            <div className="px-6 py-4 flex items-start justify-between gap-4 border-b border-slate-100">
+              <div>
+                <h2 id="cartel-title" className="text-[18px] font-medium leading-tight">
+                  Possible cartelization between bidders
+                </h2>
+                <p className="text-[13px] text-slate-500 mt-1">
+                  An investigative lead from tender SIH-2026. It is a signal for the officer, not a finding.
+                </p>
               </div>
-              <button onClick={() => setCartelData(null)} className="text-white hover:text-red-200">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <button
+                onClick={() => setCartelData(null)}
+                className="btn !h-8 !w-8 !px-0 shrink-0"
+                aria-label="Close"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="p-8 max-h-[60vh] overflow-y-auto">
+            <div className="px-6 py-5 max-h-[60vh] overflow-y-auto">
               {cartelData.length === 0 ? (
-                <div className="text-center text-slate-500 py-8 font-medium text-lg">
+                <p className="text-center text-slate-500 py-8 text-[15px]">
                   No cross-bidder collisions detected in this tender.
-                </div>
+                </p>
               ) : (
                 cartelData.map((lead, idx) => (
                   <div key={idx} className="mb-6 last:mb-0">
-                    <div className="flex gap-4 items-center mb-4 justify-center">
-                      <div className="bg-slate-100 text-slate-800 font-bold px-6 py-3 rounded-lg border-2 border-slate-300 text-lg shadow-inner">
-                        {lead.bidders_involved[0]?.toUpperCase()}
-                      </div>
-                      <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span className="pill pill-neutral !h-7 !text-[13px]">{lead.bidder_names?.[0] || lead.bidders_involved[0]}</span>
+                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                       </svg>
-                      <div className="bg-slate-100 text-slate-800 font-bold px-6 py-3 rounded-lg border-2 border-slate-300 text-lg shadow-inner">
-                        {lead.bidders_involved[1]?.toUpperCase()}
-                      </div>
+                      <span className="pill pill-neutral !h-7 !text-[13px]">{lead.bidder_names?.[1] || lead.bidders_involved[1]}</span>
+                      {typeof lead.jaccard_score === 'number' && (
+                        <span className="ml-auto text-[13px] text-slate-500 num">
+                          Similarity <span className="text-ink font-medium">{lead.jaccard_score.toFixed(2)}</span>
+                        </span>
+                      )}
                     </div>
 
-                    <div className="bg-red-50 rounded-lg p-5 border border-red-200 mb-4">
-                      <h4 className="text-sm font-bold text-red-800 uppercase tracking-wider mb-3">
-                        Hard Evidence Intersections
-                      </h4>
-                      <ul className="space-y-2">
-                        {lead.evidence?.map((ev, eIdx) => (
-                          <li key={eIdx} className="flex items-start text-red-900 text-sm">
-                            <svg className="w-4 h-4 text-red-500 mr-2 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                            </svg>
-                            {ev}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    <h3 className="text-[14px] font-medium mb-1">Evidence the two bids share</h3>
+                    <ul>
+                      {lead.evidence?.map((ev, eIdx) => (
+                        <li key={eIdx} className="py-2.5 border-t border-slate-100 text-[14px] text-slate-700 first:border-t-0">
+                          {ev}
+                        </li>
+                      ))}
+                    </ul>
 
-                    <div className="bg-slate-900 text-slate-300 p-4 rounded-lg text-xs border-l-4 border-yellow-500 font-mono">
-                      <span className="text-yellow-400 font-bold">LEGAL GUARDRAIL: </span>
-                      {lead.disclaimer}
-                    </div>
+                    <p className="notice notice-warn mt-4">
+                      <span><span className="font-medium">Legal guardrail. </span>{lead.disclaimer}</span>
+                    </p>
                   </div>
                 ))
               )}
             </div>
 
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
-              <button className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded transition flex items-center shadow-md">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Escalate to Vigilance Dept
-              </button>
+            <div className="px-6 py-3 border-t border-slate-100 flex justify-end gap-2 bg-slate-50">
+              <button className="btn btn-lg" onClick={() => setCartelData(null)}>Close</button>
+              <button className="btn btn-lg btn-primary">Escalate to Vigilance Dept</button>
             </div>
           </div>
         </div>
       )}
 
       {showBatchMode && (
-        <BatchProcessor 
-          onClose={() => setShowBatchMode(false)} 
+        <BatchProcessor
+          onClose={() => setShowBatchMode(false)}
           onSelectBidder={(bidderId) => {
             setCurrentBidder(bidderId);
             useDashboardStore.getState().setCurrentBidder(bidderId);
