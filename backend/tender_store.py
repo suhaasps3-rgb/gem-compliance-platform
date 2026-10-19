@@ -19,7 +19,7 @@ DEFAULT_TENDER_ID = "tender-sih-2026"
 _DEFAULT_TENDERS = {
     DEFAULT_TENDER_ID: {
         "id": DEFAULT_TENDER_ID,
-        "title": "CPCL high-pressure pumps (SIH 2026 demo tender)",
+        "title": "CPCL high-pressure pumps (demo tender)",
         # Same date the engine used before it was configurable.
         "closing_date": "2025-12-01",
         "criteria": {

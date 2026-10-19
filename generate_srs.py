@@ -26,7 +26,7 @@ srs_html = """
     <div class="cover">
         <h1>Software Requirements Specification (SRS)</h1>
         <h2>GeM Compliance - AI Verification Platform</h2>
-        <h3>Prepared for: SIH 2026 (Problem Statement 26100 - CPCL)</h3>
+        <h3>Prepared for: CPCL (Problem Statement 26100)</h3>
         <h3>Version 1.0</h3>
     </div>
     
