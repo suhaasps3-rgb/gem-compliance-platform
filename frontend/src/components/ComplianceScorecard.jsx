@@ -150,9 +150,9 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
 
   return (
     <section aria-label="Compliance scores" className="@container">
-      <div className="grid grid-cols-3 @2xl:grid-cols-[1.25fr_1fr_1fr_1fr] gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
+      <div className="grid grid-cols-2 @lg:grid-cols-3 @2xl:grid-cols-[1.25fr_1fr_1fr_1fr] gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
         {/* The answer figure leads: the score the officer is deciding on */}
-        <div className="bg-sheet px-5 py-4 col-span-3 @2xl:col-span-1">
+        <div className="bg-sheet px-4 @lg:px-5 py-4 col-span-2 @lg:col-span-3 @2xl:col-span-1">
           <div className="label">Overall compliance score</div>
           {complianceBlockedReason ? (
             <div className="mt-1 flex items-baseline gap-2">
@@ -174,7 +174,7 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
           </div>
         </div>
 
-        <div className="bg-sheet px-5 py-4">
+        <div className="bg-sheet px-4 @lg:px-5 py-4">
           <div className="label">Risk level</div>
           {complianceBlockedReason ? (
             <div className="mt-1 text-[24px] leading-tight text-slate-400">—</div>
@@ -187,7 +187,7 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
           <div className="text-[12px] text-slate-500 mt-2">Low 80+, medium 60–79, high 40–59</div>
         </div>
 
-        <div className="bg-sheet px-5 py-4">
+        <div className="bg-sheet px-4 @lg:px-5 py-4">
           <div className="label">Evidence confidence</div>
           <div className="mt-1 text-[24px] leading-tight num">
             {hasEvidence ? <CountUp value={Number(evidence)} decimals={2} /> : <Dash />}
@@ -200,7 +200,7 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
           )}
         </div>
 
-        <div className="bg-sheet px-5 py-4">
+        <div className="bg-sheet px-4 @lg:px-5 py-4 col-span-2 @lg:col-span-1">
           <div className="label">Probabilistic risk</div>
           <div className="mt-1 text-[24px] leading-tight num">
             {hasRisk ? <CountUp value={Number(risk)} decimals={Number.isInteger(Number(risk)) ? 0 : 1} /> : <Dash />}

@@ -89,7 +89,7 @@ export default function ContradictionReview({ contradictions, bidderId }) {
               {conflict.ai_synthesis}
             </div>
 
-            <div className="flex flex-wrap justify-end gap-2 mt-4">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-4 [&>.btn]:w-full sm:[&>.btn]:w-auto">
               <button
                 onClick={() => {
                   setDismissed(prev => new Set([...prev, conflict.contradiction_id]));

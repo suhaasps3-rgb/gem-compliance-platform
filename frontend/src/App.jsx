@@ -8,6 +8,7 @@ import SatarkMark from './components/SatarkMark';
 import useEscape from './utils/useEscape';
 import useDialogFocus from './utils/useDialogFocus';
 import { useDashboardStore } from './store/dashboardStore';
+import { jumpTo } from './components/CaseBrief';
 
 import BatchProcessor from './components/BatchProcessor';
 
@@ -22,9 +23,12 @@ function App() {
   const [cartelData, setCartelData] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [showBatchMode, setShowBatchMode] = useState(false);
+  const [mobilePane, setMobilePane] = useState('case'); // phone only: 'case' | 'docs'
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
 
-  useEscape(() => setCartelData(null), !!cartelData);
-  useDialogFocus(!!cartelData);
+  useEscape(() => { setCartelData(null); setToolsOpen(false); }, !!cartelData || toolsOpen);
+  useDialogFocus(!!cartelData || toolsOpen);
 
   const runCartelScan = async () => {
     setIsScanning(true);
@@ -55,6 +59,11 @@ function App() {
     }
   };
 
+  const goDecide = () => {
+    setMobilePane('case');
+    setTimeout(() => jumpTo('sec-decision'), 60);
+  };
+
   // Prevent infinite recursive iframe nesting if an iframe loads the root url
   if (typeof window !== 'undefined' && window.self !== window.top) {
     return (
@@ -69,16 +78,16 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-ground font-sans text-ink">
+    <div className="flex flex-col h-dvh overflow-hidden bg-ground font-sans text-ink">
       {/* ── Top bar: the product, the scope (tender, bidder) and the officer's tools ── */}
-      <header className="shrink-0 min-h-12 px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-navy text-white">
+      <header className="shrink-0 min-h-12 px-3 md:px-4 pb-2 md:py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] md:pt-2 flex items-center gap-x-3 gap-y-2 md:flex-wrap bg-navy text-white">
         <div className="flex items-center gap-2 mr-1">
           <SatarkMark onDark />
           <span className="text-[15px] font-medium leading-none text-white">SATARK</span>
           <span className="hidden lg:inline text-[13px] text-blue-200 leading-none">GeM compliance</span>
         </div>
 
-        <div className="flex items-center gap-2 min-w-0 text-[13px] text-blue-200">
+        <div className="flex flex-1 md:flex-none items-center gap-2 min-w-0 text-[13px] text-blue-200">
           <span className="hidden md:inline whitespace-nowrap">Tender SIH-2026</span>
           <svg className="hidden md:block w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5l7 7-7 7" />
@@ -94,7 +103,7 @@ function App() {
               useDashboardStore.getState().clearAllDocs();
               useDashboardStore.getState().clearComplianceBlock();
             }}
-            className="h-8 max-w-[18rem] min-w-0 rounded-md border border-white/25 bg-sheet pl-2.5 pr-7 text-[13px] text-ink"
+            className="h-9 md:h-8 flex-1 md:flex-none w-full md:w-auto max-w-[18rem] min-w-0 rounded-md border border-white/25 bg-sheet pl-2.5 pr-7 text-[13px] text-ink"
           >
             {BIDDERS.map((b) => (
               <option key={b.id} value={b.id}>{b.label}</option>
@@ -102,8 +111,13 @@ function App() {
           </select>
         </div>
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <TenderConfigurator />
+        <div className="ml-auto hidden md:flex flex-wrap items-center gap-2">
+          <button onClick={() => setConfigOpen(true)} className="btn btn-ondark" title="Configure tender rules" aria-label="Configure tender rules">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" />
+            </svg>
+            <span className="hidden xl:inline">Configure tender rules</span>
+          </button>
           <button onClick={() => setShowBatchMode(true)} className="btn btn-ondark" title="Batch mode" aria-label="Batch mode">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M4 6h16M4 12h16M4 18h10" />
@@ -138,7 +152,10 @@ function App() {
       </header>
 
       {/* ── Documents on the left, the case on the right ── */}
+      <TenderConfigurator open={configOpen} onOpenChange={setConfigOpen} hideTrigger />
+
       <SplitScreen
+        mobilePane={mobilePane}
         left={
           <div className="flex flex-col h-full p-3">
             <DocumentTabs />
@@ -147,6 +164,60 @@ function App() {
         }
         right={<Dashboard bidderId={currentBidder} />}
       />
+
+      {/* ── Phone: bottom tab bar ── */}
+      <nav
+        aria-label="Primary"
+        className="md:hidden shrink-0 grid grid-cols-4 bg-sheet border-t border-slate-200 pb-[env(safe-area-inset-bottom)]"
+      >
+        {[
+          { id: 'case', label: 'Case', on: mobilePane === 'case', act: () => setMobilePane('case'), d: 'M9 5h10M9 12h10M9 19h10M5 5h.01M5 12h.01M5 19h.01' },
+          { id: 'docs', label: 'Documents', on: mobilePane === 'docs', act: () => setMobilePane('docs'), d: 'M7 3h7l5 5v13H7zM14 3v5h5' },
+          { id: 'decide', label: 'Decide', on: false, act: goDecide, d: 'M5 13l4 4L19 7' },
+          { id: 'tools', label: 'Tools', on: toolsOpen, act: () => setToolsOpen(true), d: 'M4 7h16M4 12h16M4 17h16' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={t.act}
+            aria-current={t.on ? 'page' : undefined}
+            className={`flex flex-col items-center justify-center gap-0.5 h-14 text-[11px] font-medium ${t.on ? 'text-navy' : 'text-slate-500'}`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={t.on ? 2 : 1.6} d={t.d} />
+            </svg>
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* ── Phone: tools sheet ── */}
+      {toolsOpen && (
+        <div className="scrim md:hidden" onClick={() => setToolsOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tools-title"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-sheet shadow-2xl w-full overflow-hidden border border-slate-200"
+          >
+            <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100">
+              <h2 id="tools-title" className="text-[16px] font-medium">Tools</h2>
+              <button onClick={() => setToolsOpen(false)} className="btn !px-0 w-11" aria-label="Close">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 grid gap-2">
+              <button className="btn btn-lg btn-stack justify-start" onClick={() => { setToolsOpen(false); setConfigOpen(true); }}>Configure tender rules</button>
+              <button className="btn btn-lg btn-stack justify-start" onClick={() => { setToolsOpen(false); setShowBatchMode(true); }}>Batch mode</button>
+              <button className="btn btn-lg btn-stack justify-start" disabled={isScanning} onClick={() => { setToolsOpen(false); runCartelScan(); }}>
+                {isScanning ? 'Scanning…' : 'Run anti-cartel scan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Anti-cartel dialog ── */}
       {cartelData && (
@@ -158,7 +229,7 @@ function App() {
             onClick={(e) => e.stopPropagation()}
             className="bg-sheet rounded-lg shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200"
           >
-            <div className="px-6 py-4 flex items-start justify-between gap-4 border-b border-slate-100">
+            <div className="px-4 sm:px-6 py-4 flex items-start justify-between gap-4 border-b border-slate-100">
               <div>
                 <h2 id="cartel-title" className="text-[18px] font-medium leading-tight">
                   Possible cartelization between bidders
@@ -178,7 +249,7 @@ function App() {
               </button>
             </div>
 
-            <div className="px-6 py-5 max-h-[60vh] overflow-y-auto">
+            <div className="px-4 sm:px-6 py-5 max-h-[60dvh] overflow-y-auto">
               {cartelData.length === 0 ? (
                 <p className="text-center text-slate-500 py-8 text-[15px]">
                   No cross-bidder collisions detected in this tender.
@@ -216,9 +287,9 @@ function App() {
               )}
             </div>
 
-            <div className="px-6 py-3 border-t border-slate-100 flex justify-end gap-2 bg-slate-50">
-              <button className="btn btn-lg" onClick={() => setCartelData(null)}>Close</button>
-              <button className="btn btn-lg btn-primary">Escalate to Vigilance Dept</button>
+            <div className="px-4 sm:px-6 py-3 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 bg-slate-50">
+              <button className="btn btn-lg btn-stack sm:w-auto" onClick={() => setCartelData(null)}>Close</button>
+              <button className="btn btn-lg btn-primary btn-stack sm:w-auto">Escalate to Vigilance Dept</button>
             </div>
           </div>
         </div>

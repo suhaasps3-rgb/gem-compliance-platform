@@ -1,7 +1,7 @@
 // src/components/Layout/SplitScreen.jsx
 // Resizable split panel with drag divider, minimize toggle, and Lenis smooth scroll on the right panel.
 // Desktop: documents on a white sheet at the left, the case on the page ground at the right.
-// Phone: one pane at a time, switched with a two-option control.
+// Phone: one pane at a time, chosen from the bottom tab bar (state lives in App).
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Lenis from 'lenis';
 
@@ -9,11 +9,10 @@ const MIN_LEFT_PCT = 15;
 const MAX_LEFT_PCT = 80;
 const DEFAULT_LEFT_PCT = 40;
 
-export default function SplitScreen({ left, right }) {
+export default function SplitScreen({ left, right, mobilePane = 'case' }) {
   const [leftPct, setLeftPct] = useState(DEFAULT_LEFT_PCT);
   const [minimized, setMinimized] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [mobilePane, setMobilePane] = useState('case'); // 'case' | 'docs' (below md only)
   const prevPct = useRef(DEFAULT_LEFT_PCT);
   const containerRef = useRef(null);
   const rightRef = useRef(null);
@@ -86,27 +85,9 @@ export default function SplitScreen({ left, right }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Phone only: choose which pane to look at */}
-      <div className="md:hidden px-4 pb-2 shrink-0">
-        <div role="group" aria-label="Pane" className="grid grid-cols-2 gap-1 p-1 rounded-md bg-slate-200">
-          {[['case', 'Case review'], ['docs', 'Documents']].map(([id, label]) => (
-            <button
-              key={id}
-              aria-pressed={mobilePane === id}
-              onClick={() => setMobilePane(id)}
-              className={`h-9 rounded text-[13px] font-medium transition-colors ${
-                mobilePane === id ? 'bg-sheet text-ink' : 'text-slate-600 hover:text-ink'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div
         ref={containerRef}
-        className="flex flex-1 min-h-0 overflow-hidden px-2 pb-2 md:px-2"
+        className="flex flex-1 min-h-0 overflow-hidden px-2 pb-2 pt-2 md:pt-0 md:px-2"
       >
         {/* ── Left Panel (PDF Viewer): a white sheet ── */}
         <section
@@ -160,7 +141,7 @@ export default function SplitScreen({ left, right }) {
         <section
           ref={rightRef}
           aria-label="Case review"
-          className={`${mobilePane === 'case' ? 'block' : 'hidden'} md:block flex-1 min-w-0 overflow-y-auto overflow-x-hidden`}
+          className={`${mobilePane === 'case' ? 'block' : 'hidden'} md:block flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain`}
           style={{ scrollBehavior: 'auto' }} // Lenis takes over
         >
           <div>

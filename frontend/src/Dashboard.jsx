@@ -285,7 +285,7 @@ export default function Dashboard({ bidderId }) {
             {statusText}
           </span>
         </div>
-        <ol aria-label="How the verdict is reached" className="mt-4 pt-3 border-t border-white/15 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] text-blue-200">
+        <ol aria-label="How the verdict is reached" className="hidden sm:flex mt-4 pt-3 border-t border-white/15 flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] text-blue-200">
           {pipeline.map((step, i) => (
             <li key={step} className="flex items-center gap-1.5">
               <span className={i === pipeline.length - 1 ? 'text-white font-medium' : ''}>{step}</span>

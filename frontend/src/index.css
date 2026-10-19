@@ -364,6 +364,36 @@
     padding: 16px;
     background: rgb(10 10 10 / 0.45);
   }
+  /* Phones: dialogs become bottom sheets. */
+  @media (max-width: 639px) {
+    .scrim {
+      align-items: flex-end;
+      padding: 0;
+    }
+    .scrim > [role="dialog"] {
+      max-width: none !important;
+      width: 100%;
+      max-height: 92dvh;
+      border-radius: 16px 16px 0 0 !important;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .card-head {
+      flex-wrap: wrap;
+    }
+    .btn-stack {
+      width: 100%;
+    }
+  }
+}
+
+/* Touch screens: bigger targets, no iOS zoom on focus, no tap delay or highlight. */
+@media (pointer: coarse) {
+  .btn { height: 44px; }
+  .btn-lg { height: 48px; }
+  .btn[class*="h-8"] { height: 44px !important; width: 44px !important; }
+  select, input, textarea { font-size: 16px !important; }
+  button, a, select, summary, [role="button"] { touch-action: manipulation; }
+  html { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (prefers-reduced-motion: reduce) {

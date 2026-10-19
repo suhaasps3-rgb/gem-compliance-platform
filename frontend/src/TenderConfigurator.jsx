@@ -3,8 +3,11 @@ import { useDashboardStore } from './store/dashboardStore';
 import useEscape from './utils/useEscape';
 import useDialogFocus from './utils/useDialogFocus';
 
-export default function TenderConfigurator() {
-  const [isOpen, setIsOpen]   = useState(false);
+export default function TenderConfigurator({ open, onOpenChange, hideTrigger = false } = {}) {
+  const [innerOpen, setInnerOpen] = useState(false);
+  // Works on its own, or controlled by the parent (the phone tools sheet opens it from outside).
+  const isOpen = open !== undefined ? open : innerOpen;
+  const setIsOpen = onOpenChange || setInnerOpen;
   const [file, setFile]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
@@ -35,12 +38,12 @@ export default function TenderConfigurator() {
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="btn btn-ondark" title="Configure tender rules" aria-label="Configure tender rules">
+      {!hideTrigger && <button onClick={() => setIsOpen(true)} className="btn btn-ondark" title="Configure tender rules" aria-label="Configure tender rules">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6" />
         </svg>
         <span className="hidden xl:inline">Configure tender rules</span>
-      </button>
+      </button>}
 
       {isOpen && (
         <div className="scrim" onClick={() => setIsOpen(false)}>
