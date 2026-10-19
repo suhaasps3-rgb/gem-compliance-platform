@@ -11,6 +11,7 @@ function Field({ label, value, status }) {
         {status === 'ok'   && <span className="pill pill-ok">Verified</span>}
         {status === 'warn' && <span className="pill pill-warn">Review</span>}
         {status === 'fail' && <span className="pill pill-bad">Mismatch</span>}
+        {status === 'unverified' && <span className="pill pill-neutral">Unverified</span>}
       </div>
     </div>
   );
@@ -82,6 +83,7 @@ export default function GovDocPanel({ bidderDetails }) {
   };
 
   const gstNameMismatch = checkMismatch(gstResult?.extracted?.legal_name);
+  const gstFilingUnverified = gstResult?.extracted?.gstr_filing_status === 'UNVERIFIED' || gstResult?.extracted?.pending_returns == null;
   const udyamNameMismatch = checkMismatch(udyamResult?.extracted?.enterprise_name);
   const epfoNameMismatch = checkMismatch(epfoResult?.extracted?.employer_name);
   const esicNameMismatch = checkMismatch(esicResult?.extracted?.employer_name);
@@ -123,10 +125,11 @@ export default function GovDocPanel({ bidderDetails }) {
           )}
             <Field label="Active Status"        value={gstResult.verification?.registration_active ? 'ACTIVE' : 'INACTIVE'}
                  status={gstResult.verification?.registration_active ? 'ok' : 'fail'} />
-          <Field label="GSTR-3B Filing Status" value={gstResult.extracted?.gstr_filing_status || 'FILED'}
-                 status={gstResult.extracted?.pending_returns > 0 ? 'fail' : 'ok'} />
-          <Field label="Pending Returns"       value={gstResult.extracted?.pending_returns ?? 0}
-                 status={gstResult.extracted?.pending_returns > 0 ? 'fail' : 'ok'} />
+          {/* A certificate cannot show filing status. Without a live GSTN lookup it stays unverified. */}
+          <Field label="GSTR-3B Filing Status" value={gstFilingUnverified ? 'Not checked' : gstResult.extracted?.gstr_filing_status}
+                 status={gstFilingUnverified ? 'unverified' : gstResult.extracted?.pending_returns > 0 ? 'fail' : 'ok'} />
+          <Field label="Pending Returns"       value={gstFilingUnverified ? null : (gstResult.extracted?.pending_returns ?? 0)}
+                 status={gstFilingUnverified ? 'unverified' : gstResult.extracted?.pending_returns > 0 ? 'fail' : 'ok'} />
           {gstResult.verification?.composition_fail && (
             <Mismatch>COMPOSITION dealers cannot issue GST invoices to Government entities.
               Bidder must hold a <strong>Regular</strong> GST registration for B2G procurement.

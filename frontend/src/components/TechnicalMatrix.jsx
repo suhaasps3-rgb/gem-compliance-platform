@@ -17,13 +17,14 @@ export default function TechnicalMatrix() {
   );
 
   const pass = technicalMatrixResult.overall_result === 'PASS';
+  const incomplete = technicalMatrixResult.overall_result === 'INCOMPLETE';
 
   return (
     <section className="card overflow-hidden" aria-labelledby="tech-title">
       <div className="card-head border-b border-slate-100">
         <h2 id="tech-title" className="card-title">Technical specifications matrix</h2>
-        <span className={`pill ${pass ? 'pill-ok' : 'pill-bad'} num`}>
-          Score {technicalMatrixResult.technical_score}%
+        <span className={`pill ${pass ? 'pill-ok' : incomplete ? 'pill-warn' : 'pill-bad'} num`}>
+          {incomplete ? 'Incomplete · ' : ''}Score {technicalMatrixResult.technical_score}%
         </span>
       </div>
 
@@ -48,8 +49,8 @@ export default function TechnicalMatrix() {
                   {row.deviation ? (row.deviation > 0 ? `+${row.deviation}` : row.deviation) : '—'}
                 </td>
                 <td className="h-11 pr-5 text-right">
-                  <span className={`pill ${row.result === 'PASS' ? 'pill-ok' : 'pill-bad'}`}>
-                    {row.result === 'PASS' ? 'Pass' : 'Fail'}
+                  <span className={`pill ${row.result === 'PASS' ? 'pill-ok' : row.result === 'MISSING' ? 'pill-warn' : 'pill-bad'}`}>
+                    {row.result === 'PASS' ? 'Pass' : row.result === 'MISSING' ? 'Not provided' : 'Fail'}
                   </span>
                 </td>
               </tr>
