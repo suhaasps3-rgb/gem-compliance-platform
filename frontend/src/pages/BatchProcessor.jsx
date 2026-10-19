@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDashboardStore } from '../store/dashboardStore';
 import useEscape from '../utils/useEscape';
+import useDialogFocus from '../utils/useDialogFocus';
 
 // Unused legacy page; the dialog in components/BatchProcessor.jsx is the live one.
 export default function BatchProcessor() {
@@ -12,6 +13,7 @@ export default function BatchProcessor() {
   const { setBatchModeActive } = useDashboardStore();
 
   useEscape(() => setBatchModeActive(false), true);
+  useDialogFocus(true);
 
   const handleUpload = async () => {
     if (!file) return;

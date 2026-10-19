@@ -504,14 +504,14 @@ export default function Viewer({ currentBidder }) {
         <div className="flex flex-wrap items-center gap-2">
           {/* Upload button */}
           <label
-            className={`btn cursor-pointer ${verifying ? 'pointer-events-none !bg-slate-100 !text-slate-500' : ''}`}
+            className={`btn cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-data ${verifying ? 'pointer-events-none !bg-slate-100 !text-slate-500' : ''}`}
             aria-busy={verifying}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             {getUploadLabel()}
-            <input type="file" accept="application/pdf" className="hidden" onChange={handleFileUpload} />
+            <input type="file" accept="application/pdf" className="sr-only" onChange={handleFileUpload} disabled={verifying} />
           </label>
 
           {customPdfUrl && (

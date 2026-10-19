@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import mockData from '../data/mock_dataset.json';
 import { useDashboardStore } from '../store/dashboardStore';
 import useEscape from '../utils/useEscape';
+import useDialogFocus from '../utils/useDialogFocus';
 
 const PIPELINE_STAGES = [
   'Ingesting Tender Submissions & Decompressing Dossiers',
@@ -22,6 +23,7 @@ export default function BatchProcessor({ onClose, onSelectBidder }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEscape(() => onClose(), true);
+  useDialogFocus(true);
 
   // Prepare standard bidder evaluation dataset
   const generateBidderResults = () => {

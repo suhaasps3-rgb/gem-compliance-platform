@@ -6,6 +6,7 @@ import Dashboard from './Dashboard';
 import TenderConfigurator from './TenderConfigurator';
 import SatarkMark from './components/SatarkMark';
 import useEscape from './utils/useEscape';
+import useDialogFocus from './utils/useDialogFocus';
 import { useDashboardStore } from './store/dashboardStore';
 
 import BatchProcessor from './components/BatchProcessor';
@@ -23,6 +24,7 @@ function App() {
   const [showBatchMode, setShowBatchMode] = useState(false);
 
   useEscape(() => setCartelData(null), !!cartelData);
+  useDialogFocus(!!cartelData);
 
   const runCartelScan = async () => {
     setIsScanning(true);

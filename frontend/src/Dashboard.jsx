@@ -36,6 +36,9 @@ export default function Dashboard({ bidderId }) {
   
   // New PO Decision State
   const [poDecision, setPoDecision] = useState(null);
+  const [confirmReject, setConfirmReject] = useState(false);
+  // A pending rejection must never carry over to a different bidder.
+  useEffect(() => { setConfirmReject(false); }, [bidderId]);
 
   useEffect(() => {
     // If a doc was uploaded, don't re-fetch — use that result instead
@@ -327,7 +330,7 @@ export default function Dashboard({ bidderId }) {
           <h2 id="decision-title" className="card-title">Officer's final decision</h2>
           <span className="card-note">Authoritative · supersedes the AI recommendation</span>
         </div>
-        <div className="px-5 py-4">
+        <div className="px-5 py-4" aria-live="polite">
           {poDecision ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -356,9 +359,18 @@ export default function Dashboard({ bidderId }) {
                 <button onClick={() => setPoDecision('Request Clarification')} className="btn btn-lg">
                   Request clarification
                 </button>
-                <button onClick={() => setPoDecision('Reject')} className="btn btn-lg btn-danger">
-                  Reject bidder
-                </button>
+                {confirmReject ? (
+                  <>
+                    <button onClick={() => { setPoDecision('Reject'); setConfirmReject(false); }} className="btn btn-lg btn-danger" autoFocus>
+                      Confirm rejection
+                    </button>
+                    <button onClick={() => setConfirmReject(false)} className="btn btn-lg">Cancel</button>
+                  </>
+                ) : (
+                  <button onClick={() => setConfirmReject(true)} className="btn btn-lg btn-danger">
+                    Reject bidder
+                  </button>
+                )}
               </div>
             </div>
           )}

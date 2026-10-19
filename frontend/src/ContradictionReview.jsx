@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDashboardStore } from './store/dashboardStore';
 import useEscape from './utils/useEscape';
+import useDialogFocus from './utils/useDialogFocus';
 
 export default function ContradictionReview({ contradictions, bidderId }) {
   const [loading, setLoading] = useState(false);
@@ -8,6 +9,7 @@ export default function ContradictionReview({ contradictions, bidderId }) {
   const [dismissed, setDismissed] = React.useState(new Set());
   const addAuditEntry = useDashboardStore((s) => s.addAuditEntry);
   useEscape(() => setModalData(null), !!modalData);
+  useDialogFocus(!!modalData);
 
   if (!contradictions || contradictions.length === 0) {
     return (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDashboardStore } from './store/dashboardStore';
 import useEscape from './utils/useEscape';
+import useDialogFocus from './utils/useDialogFocus';
 
 export default function TenderConfigurator() {
   const [isOpen, setIsOpen]   = useState(false);
@@ -11,6 +12,7 @@ export default function TenderConfigurator() {
   const setTenderRules = useDashboardStore(s => s.setTenderRules);
 
   useEscape(() => setIsOpen(false), isOpen);
+  useDialogFocus(isOpen);
 
   const handleUpload = async () => {
     if (!file) return;

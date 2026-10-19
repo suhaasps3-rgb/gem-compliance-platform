@@ -88,12 +88,11 @@ export default function SplitScreen({ left, right }) {
     <div className="flex flex-col flex-1 min-h-0">
       {/* Phone only: choose which pane to look at */}
       <div className="md:hidden px-4 pb-2 shrink-0">
-        <div role="tablist" aria-label="Pane" className="grid grid-cols-2 gap-1 p-1 rounded-md bg-slate-200">
+        <div role="group" aria-label="Pane" className="grid grid-cols-2 gap-1 p-1 rounded-md bg-slate-200">
           {[['case', 'Case review'], ['docs', 'Documents']].map(([id, label]) => (
             <button
               key={id}
-              role="tab"
-              aria-selected={mobilePane === id}
+              aria-pressed={mobilePane === id}
               onClick={() => setMobilePane(id)}
               className={`h-9 rounded text-[13px] font-medium transition-colors ${
                 mobilePane === id ? 'bg-sheet text-ink' : 'text-slate-600 hover:text-ink'
