@@ -190,11 +190,11 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
         <div className="bg-sheet px-4 @lg:px-5 py-4">
           <div className="label">Evidence confidence</div>
           <div className="mt-1 text-[24px] leading-tight num">
-            {hasEvidence ? <CountUp value={Number(evidence)} decimals={2} /> : <Dash />}
-            <span className="text-[14px] text-slate-500 whitespace-nowrap"> / 1.00</span>
+            {hasEvidence ? <CountUp value={Number(evidence) * 10} decimals={1} /> : <Dash />}
+            <span className="text-[14px] text-slate-500 whitespace-nowrap"> / 10</span>
           </div>
           {hasEvidence && (
-            <div className="mt-2.5 h-1 rounded-full bg-slate-200" role="img" aria-label={`Evidence confidence ${Number(evidence).toFixed(2)} out of 1.00`}>
+            <div className="mt-2.5 h-1 rounded-full bg-slate-200" role="img" aria-label={`Evidence confidence ${(Number(evidence) * 10).toFixed(1)} out of 10`}>
               <GrowBar className="h-1 rounded-full bg-data" style={{ width: `${Math.min(100, Math.max(0, Number(evidence) * 100))}%` }} />
             </div>
           )}
