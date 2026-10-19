@@ -22,3 +22,6 @@ batch_demo_extract_2/
 ca_text_dump.txt
 
 frontend/.env.local
+
+# design inspector output
+.taste-skill/
