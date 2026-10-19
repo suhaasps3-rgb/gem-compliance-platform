@@ -278,7 +278,7 @@ export default function Dashboard({ bidderId }) {
             <p className="text-[13px] text-blue-200">Bidder verification</p>
             <h1 className="text-[28px] font-medium leading-tight mt-0.5 break-words text-white">{bidderName}</h1>
             <p className="text-[13px] text-blue-200 mt-1">
-              <span className="font-mono text-[12px] whitespace-nowrap">{displayBidderId}</span> · tender SIH-2026
+              <span className="font-mono text-[12px] whitespace-nowrap">{displayBidderId}</span>
             </p>
           </div>
           <span className={`pill ${statusTone === 'ok' ? 'pill-ok' : statusTone === 'bad' ? 'pill-bad' : 'pill-warn'} !h-7 !text-[13px] max-w-full !whitespace-normal !leading-tight py-1`}>

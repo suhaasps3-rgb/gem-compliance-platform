@@ -88,10 +88,6 @@ function App() {
         </div>
 
         <div className="flex flex-1 md:flex-none items-center gap-2 min-w-0 text-[13px] text-blue-200">
-          <span className="hidden md:inline whitespace-nowrap">Tender SIH-2026</span>
-          <svg className="hidden md:block w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5l7 7-7 7" />
-          </svg>
           <label htmlFor="bidder-select" className="sr-only">Bidder under review</label>
           <select
             id="bidder-select"
@@ -235,7 +231,7 @@ function App() {
                   Possible cartelization between bidders
                 </h2>
                 <p className="text-[13px] text-slate-500 mt-1">
-                  An investigative lead from tender SIH-2026. It is a signal for the officer, not a finding.
+                  An investigative lead from this tender. It is a signal for the officer, not a finding.
                 </p>
               </div>
               <button
