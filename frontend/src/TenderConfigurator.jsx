@@ -35,7 +35,7 @@ export default function TenderConfigurator() {
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="btn" title="Configure tender rules" aria-label="Configure tender rules">
+      <button onClick={() => setIsOpen(true)} className="btn btn-ondark" title="Configure tender rules" aria-label="Configure tender rules">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6" />
         </svg>

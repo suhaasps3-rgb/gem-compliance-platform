@@ -39,7 +39,9 @@
   --inset-shadow-sm: 0 0 #0000;
 
   /* Named roles */
-  --color-ground: #f2f4f7;        /* page ground, a blue-grey for a ledger */
+  --color-ground: #edf1f7;        /* page ground, a cool blue-grey */
+  --color-navy: #0f2747;          /* the brand colour: top bar, verdict hero, primary action */
+  --color-navy-2: #1a3a66;        /* hover and raised states on navy */
   --color-sheet: #ffffff;         /* cards and sheets */
   --color-ink: #0a0a0a;           /* text and the one primary action */
   --color-data: #1d5fbf;          /* the single data hue */
@@ -236,15 +238,31 @@
     background: var(--color-slate-100);
   }
   .btn-primary {
-    background: var(--color-ink);
-    border-color: var(--color-ink);
+    background: var(--color-navy);
+    border-color: var(--color-navy);
     color: #fff;
   }
   .btn-primary:hover:not(:disabled) {
-    background: #2a2a2a;
+    background: var(--color-navy-2);
   }
   .btn-primary:active:not(:disabled) {
-    background: #3d3d3d;
+    background: #264b80;
+  }
+  /* Outlined button for use on the navy top bar. */
+  .btn-ondark {
+    background: transparent;
+    border-color: rgb(255 255 255 / 0.28);
+    color: #fff;
+  }
+  .btn-ondark:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.12);
+  }
+  .btn-ondark:active:not(:disabled) {
+    background: rgb(255 255 255 / 0.2);
+  }
+  .btn-ondark:disabled {
+    background: transparent;
+    color: rgb(255 255 255 / 0.5);
   }
   .btn-danger {
     color: var(--color-red-700);
@@ -290,6 +308,9 @@
     justify-content: space-between;
     gap: 12px;
     padding: 14px 20px;
+    background: #f4f7fc;
+    border-bottom: 1px solid var(--color-slate-200);
+    border-radius: 7px 7px 0 0;
   }
   .card-title {
     font-size: 16px;

@@ -1,6 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDashboardStore } from '../store/dashboardStore';
 import { CountUp, GrowBar } from '../utils/motion';
+
+/** A ring that fills to the score. The fill is a CSS transition, so reduced motion switches it off. */
+function ScoreRing({ score, color }) {
+  const r = 26;
+  const circ = 2 * Math.PI * r;
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(score));
+    return () => cancelAnimationFrame(id);
+  }, [score]);
+  return (
+    <svg width="68" height="68" viewBox="0 0 68 68" className="shrink-0 -rotate-90" aria-hidden="true">
+      <circle cx="34" cy="34" r={r} fill="none" stroke="#e3e6ea" strokeWidth="7" />
+      <circle
+        cx="34" cy="34" r={r} fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={circ * (1 - Math.max(0, Math.min(100, shown)) / 100)}
+        style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)' }}
+      />
+    </svg>
+  );
+}
 
 export default function ComplianceScorecard({ displayData, bidderDetails }) {
   const { 
@@ -139,9 +161,12 @@ export default function ComplianceScorecard({ displayData, bidderDetails }) {
               <span className="pill pill-bad ml-1">Blocked</span>
             </div>
           ) : (
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-[36px] leading-none num"><CountUp value={score} /></span>
-              <span className="text-[14px] text-slate-500">/ 100</span>
+            <div className="mt-2 flex items-center gap-4">
+              <ScoreRing score={score} color={riskDot} />
+              <div className="flex items-baseline gap-2">
+                <span className="text-[36px] leading-none num"><CountUp value={score} /></span>
+                <span className="text-[14px] text-slate-500">/ 100</span>
+              </div>
             </div>
           )}
           <div className="text-[12px] text-slate-500 mt-2">

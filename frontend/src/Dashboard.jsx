@@ -272,12 +272,12 @@ export default function Dashboard({ bidderId }) {
       )}
 
       {/* Title row: who is being reviewed, and the verdict of the evidence so far */}
-      <header className="pt-1">
+      <header className="rounded-lg bg-navy text-white px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
-            <p className="text-[13px] text-slate-500">Bidder verification</p>
-            <h1 className="text-[24px] font-medium leading-tight mt-0.5 break-words">{bidderName}</h1>
-            <p className="text-[13px] text-slate-500 mt-1">
+            <p className="text-[13px] text-blue-200">Bidder verification</p>
+            <h1 className="text-[28px] font-medium leading-tight mt-0.5 break-words text-white">{bidderName}</h1>
+            <p className="text-[13px] text-blue-200 mt-1">
               <span className="font-mono text-[12px] whitespace-nowrap">{displayBidderId}</span> · tender SIH-2026
             </p>
           </div>
@@ -285,12 +285,12 @@ export default function Dashboard({ bidderId }) {
             {statusText}
           </span>
         </div>
-        <ol aria-label="How the verdict is reached" className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] text-slate-500">
+        <ol aria-label="How the verdict is reached" className="mt-4 pt-3 border-t border-white/15 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px] text-blue-200">
           {pipeline.map((step, i) => (
             <li key={step} className="flex items-center gap-1.5">
-              <span className={i === pipeline.length - 1 ? 'text-ink font-medium' : ''}>{step}</span>
+              <span className={i === pipeline.length - 1 ? 'text-white font-medium' : ''}>{step}</span>
               {i < pipeline.length - 1 && (
-                <svg className="w-3 h-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                <svg className="w-3 h-3 text-blue-300/60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
               )}
             </li>
           ))}
@@ -328,7 +328,13 @@ export default function Dashboard({ bidderId }) {
             <span className="pill pill-neutral">Advisory only</span>
           </div>
           <div className="px-5 py-4 grid gap-x-8 gap-y-4 @xl:grid-cols-[minmax(0,13rem)_1fr]">
-            <div>
+            <div
+              className="rounded-md px-4 py-3 self-start"
+              style={{
+                background: decisionTone === 'ok' ? '#ecf8f0' : decisionTone === 'bad' ? '#fdf0ee' : '#fff8e6',
+                boxShadow: `inset 3px 0 0 ${decisionTone === 'ok' ? '#2e7d32' : decisionTone === 'bad' ? '#c4242a' : '#b45309'}`,
+              }}
+            >
               <div className="label">Recommendation</div>
               <div className="mt-1 flex items-center gap-2 text-[24px] leading-tight">
                 <span

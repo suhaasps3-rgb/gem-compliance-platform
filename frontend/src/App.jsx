@@ -71,14 +71,14 @@ function App() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-ground font-sans text-ink">
       {/* ── Top bar: the product, the scope (tender, bidder) and the officer's tools ── */}
-      <header className="shrink-0 min-h-12 px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-ground">
+      <header className="shrink-0 min-h-12 px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 bg-navy text-white">
         <div className="flex items-center gap-2 mr-1">
-          <SatarkMark />
-          <span className="text-[15px] font-medium leading-none">SATARK</span>
-          <span className="hidden lg:inline text-[13px] text-slate-500 leading-none">GeM compliance</span>
+          <SatarkMark onDark />
+          <span className="text-[15px] font-medium leading-none text-white">SATARK</span>
+          <span className="hidden lg:inline text-[13px] text-blue-200 leading-none">GeM compliance</span>
         </div>
 
-        <div className="flex items-center gap-2 min-w-0 text-[13px] text-slate-500">
+        <div className="flex items-center gap-2 min-w-0 text-[13px] text-blue-200">
           <span className="hidden md:inline whitespace-nowrap">Tender SIH-2026</span>
           <svg className="hidden md:block w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5l7 7-7 7" />
@@ -94,7 +94,7 @@ function App() {
               useDashboardStore.getState().clearAllDocs();
               useDashboardStore.getState().clearComplianceBlock();
             }}
-            className="h-8 max-w-[18rem] min-w-0 rounded-md border border-slate-300 bg-sheet pl-2.5 pr-7 text-[13px] text-ink"
+            className="h-8 max-w-[18rem] min-w-0 rounded-md border border-white/25 bg-sheet pl-2.5 pr-7 text-[13px] text-ink"
           >
             {BIDDERS.map((b) => (
               <option key={b.id} value={b.id}>{b.label}</option>
@@ -104,7 +104,7 @@ function App() {
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <TenderConfigurator />
-          <button onClick={() => setShowBatchMode(true)} className="btn" title="Batch mode" aria-label="Batch mode">
+          <button onClick={() => setShowBatchMode(true)} className="btn btn-ondark" title="Batch mode" aria-label="Batch mode">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M4 6h16M4 12h16M4 18h10" />
             </svg>
@@ -113,7 +113,7 @@ function App() {
           <button
             onClick={runCartelScan}
             disabled={isScanning}
-            className="btn"
+            className="btn btn-ondark"
             title="Run anti-cartel scan"
             aria-label="Run anti-cartel scan"
           >
@@ -127,12 +127,12 @@ function App() {
           <div className="hidden sm:flex items-center gap-2 pl-2 text-[13px]">
             <span
               className="w-7 h-7 rounded-full grid place-items-center text-[12px] font-medium"
-              style={{ background: '#e4ecf6', color: '#23405f' }}
+              style={{ background: '#2a4a7c', color: '#ffffff' }}
               aria-hidden="true"
             >
               IR
             </span>
-            <span className="hidden lg:inline text-ink">Inspector Raj</span>
+            <span className="hidden lg:inline text-white">Inspector Raj</span>
           </div>
         </div>
       </header>
